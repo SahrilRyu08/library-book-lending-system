@@ -11,16 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('borrow_details', function (Blueprint $table) {
+        Schema::create('peminjaman_detail', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('borrow_id')
-            ->constrained()
-            ->cascadeOnDelete();
-            $table->foreignId('book_id')
-            ->constrained()
-            ->cascadeOnDelete();
-            $table->integer('quantity')
-                ->default(1);
+            $table->foreignId('peminjaman_id')->constrained('peminjaman')->cascadeOnDelete();
+            $table->foreignId('buku_id')->constrained('buku')->cascadeOnDelete();
+            $table->unsignedInteger('jumlah')->default(1);
             $table->timestamps();
         });
     }
@@ -30,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('borrow_details');
+        Schema::dropIfExists('peminjaman_detail');
     }
 };
