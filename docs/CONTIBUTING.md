@@ -1,6 +1,6 @@
-# Contributing — Pustaka Kita
+# Contributing — MOCO
 
-Panduan kerja tim untuk pengembangan **Pustaka Kita** (Laravel 12 · Bootstrap 5 · MySQL). Dokumen ini wajib dibaca semua anggota sebelum mulai ngoding. Tujuannya satu: **lima orang bisa kerja paralel tanpa saling tabrakan.**
+Panduan kerja tim untuk pengembangan **MOCO** (Laravel 12 · Bootstrap 5 · MySQL). Dokumen ini wajib dibaca semua anggota sebelum mulai ngoding. Tujuannya satu: **lima orang bisa kerja paralel tanpa saling tabrakan.**
 
 ---
 
