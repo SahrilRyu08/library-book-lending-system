@@ -1,288 +1,229 @@
-# Contributing — MOCO
+# Pembagian Tugas — Moco (Perpustakaan Digital) (5 Developer)
 
-Panduan kerja tim untuk pengembangan **MOCO** (Laravel 12 · Bootstrap 5 · MySQL). Dokumen ini wajib dibaca semua anggota sebelum mulai ngoding. Tujuannya satu: **lima orang bisa kerja paralel tanpa saling tabrakan.**
-
----
-
-## 1. Sebelum mulai
-
-### Prasyarat
-- PHP 8.2+, Composer, MySQL 8, Node.js (untuk aset Bootstrap), Git.
-
-### Setup lokal (sekali di awal)
-```bash
-git clone <repo-url> pustaka-kita
-cd pustaka-kita
-git checkout develop          # SELALU kerja dari develop, bukan main
-
-composer install
-cp .env.example .env
-php artisan key:generate
-```
-
-Atur `.env`:
-```env
-DB_DATABASE=pustaka_kita
-DB_USERNAME=root
-DB_PASSWORD=
-
-QUEUE_CONNECTION=sync          # dev: notifikasi jalan inline
-MAIL_MAILER=log                # dev: email masuk ke storage/logs/laravel.log
-PERPUS_NOTIF_EMAIL=true
-```
-
-```bash
-php artisan migrate:fresh --seed
-php artisan storage:link
-php artisan serve
-```
-
-> ⚠️ Pastikan `bootstrap/app.php` sudah punya alias middleware `admin` (bagian dari commit fondasi). Kalau halaman admin error 403/route, cek alias ini dulu.
-
-Akun hasil seeder (password semua `password`): `admin@perpus.app` (admin), `john@email.com` (anggota).
+> **Proyek:** Peminjaman Buku Perpustakaan (Laravel 12 + Bootstrap 5 + MySQL).
+> **Konteks:** Route lengkap, Controller/Service masih **dummy data** → ganti ke MySQL sesuai ERD + lengkapi fitur sesuai rubrik.
+> **Workflow Git:** `main` → `develop` → `feature/*`. PR ke `develop`.
+> **Role:** enum DB = `admin` / `anggota` (anggota = "member" di brief).
 
 ---
 
-## 2. Model branching
+## Ringkasan Pembagian
 
-```
-main      ← rilis stabil saja. Tidak ada yang push langsung.
-develop   ← integrasi. Semua fitur di-merge ke sini lewat PR.
-feat/*    ← branch kerja tiap developer (fork dari develop).
-```
+| # | Branch | PIC | Cakupan |
+|---|--------|-----|---------|
+| 1 | `feature/auth-foundation` | **Dev 1** | Auth & authz, migration, model+relasi, seeder+factory, scaffold notif |
+| 2 | `feature/admin-book-category` | Dev 2 | CRUD Buku + upload foto & Kategori (Admin) |
+| 3 | `feature/member-catalog` | Dev 3 | Daftar buku + keranjang pinjam (Anggota) |
+| 4 | `feature/loan-system` | Dev 4 | Peminjaman header-detail, cegah stok habis, batas pinjam, denda |
+| 5 | `feature/returns-reports-dashboard` | Dev 5 | Pengembalian, Laporan, Notifikasi H-3, Dashboard |
 
-- `main` dan `develop` **diproteksi**: tidak ada direct push, wajib lewat Pull Request + minimal 1 review.
-- Fondasi (kontrak: schema, model, enum, interface, event) + auth/authz sudah ada di `develop`. Jangan mulai sebelum ini ter-merge.
+**Urutan:** Branch 1 merge `develop` duluan → Branch 2 → 3/4/5 paralel.
 
 ---
 
-## 3. Tim & kepemilikan file
+## INDEKS ENDPOINT (sumber kebenaran tunggal)
 
-Aturan inti conflict-free: **satu file hanya dimiliki satu branch.** Jangan menyentuh file di baris orang lain.
+Legend: 🟢 = sudah ada di `routes/web.php` · 🔵 = endpoint **baru**, perlu ditambahkan.
 
-| Developer | Branch | File yang dimiliki | Stub yang diganti |
+### Auth
+| St | Method | URI | Route name | Controller@method | Branch |
+|---|---|---|---|---|---|
+| 🟢 | GET | `/` | — | redirect ke `login` | 1 |
+| 🟢 | GET | `/login` | `login` | `AuthController@showLogin` | 1 |
+| 🟢 | POST | `/login` | `login.post` | `AuthController@login` | 1 |
+| 🟢 | GET | `/register` | `register` | `AuthController@showRegister` | 1 |
+| 🟢 | POST | `/register` | `register.post` | `AuthController@register` | 1 |
+| 🟢 | POST | `/logout` | `logout` | `AuthController@logout` | 1 |
+
+### Member (prefix `/member`, name `member.`)
+| St | Method | URI | Route name | Controller@method | Branch |
+|---|---|---|---|---|---|
+| 🟢 | GET | `/member/books` | `member.books.index` | `Member\BookController@index` | 3 |
+| 🟢 | GET | `/member/books/{id}` | `member.books.show` | `Member\BookController@show` | 3 |
+| 🔵 | GET | `/member/cart` | `member.cart.index` | `Member\CartController@index` | 3 |
+| 🔵 | POST | `/member/cart` | `member.cart.store` | `Member\CartController@store` | 3 |
+| 🔵 | DELETE | `/member/cart/{bukuId}` | `member.cart.destroy` | `Member\CartController@destroy` | 3 |
+| 🟢 | GET | `/member/loans` | `member.loans.index` | `Member\LoanController@index` | 4 |
+| 🟢 | POST | `/member/loans` | `member.loans.store` | `Member\LoanController@store` | 4 |
+| 🟢 | GET | `/member/loans/history` | `member.loans.history` | `Member\LoanController@history` | 4 |
+| 🟢 | GET | `/member/loans/{id}` | `member.loans.show` | `Member\LoanController@show` | 4 |
+| 🔵 | GET | `/member/notifications` | `member.notifications.index` | `Member\NotificationController@index` | 5 |
+| 🔵 | POST | `/member/notifications/{id}/read` | `member.notifications.read` | `Member\NotificationController@markRead` | 5 |
+
+### Admin (prefix `/admin`, name `admin.`)
+| St | Method | URI | Route name | Controller@method | Branch |
+|---|---|---|---|---|---|
+| 🟢 | GET | `/admin/dashboard` | `admin.dashboard` | `Admin\DashboardController@index` | 5 |
+| 🟢 | GET | `/admin/books` | `admin.books.index` | `Admin\BookController@index` | 2 |
+| 🟢 | GET | `/admin/books/create` | `admin.books.create` | `Admin\BookController@create` | 2 |
+| 🟢 | POST | `/admin/books` | `admin.books.store` | `Admin\BookController@store` | 2 |
+| 🟢 | GET | `/admin/books/{id}/edit` | `admin.books.edit` | `Admin\BookController@edit` | 2 |
+| 🟢 | PUT | `/admin/books/{id}` | `admin.books.update` | `Admin\BookController@update` | 2 |
+| 🟢 | DELETE | `/admin/books/{id}` | `admin.books.destroy` | `Admin\BookController@destroy` | 2 |
+| 🟢 | GET | `/admin/categories` | `admin.categories.index` | `Admin\CategoryController@index` | 2 |
+| 🟢 | POST | `/admin/categories` | `admin.categories.store` | `Admin\CategoryController@store` | 2 |
+| 🟢 | PUT | `/admin/categories/{id}` | `admin.categories.update` | `Admin\CategoryController@update` | 2 |
+| 🟢 | DELETE | `/admin/categories/{id}` | `admin.categories.destroy` | `Admin\CategoryController@destroy` | 2 |
+| 🟢 | GET | `/admin/loans` | `admin.loans.index` | `Admin\LoanController@index` | 4 |
+| 🟢 | GET | `/admin/loans/{id}` | `admin.loans.show` | `Admin\LoanController@show` | 4 |
+| 🟢 | GET | `/admin/returns` | `admin.returns.index` | `Admin\ReturnController@index` | 5 |
+| 🟢 | POST | `/admin/returns` | `admin.returns.store` | `Admin\ReturnController@store` | 5 |
+| 🟢 | GET | `/admin/reports` | `admin.reports.index` | `Admin\ReportController@index` | 5 |
+| 🔵 | GET | `/admin/reports/export` | `admin.reports.export` | `Admin\ReportController@export` | 5 (opsional) |
+
+> 🔵 **Aturan tambah route:** hanya owner branch yang menambahkan route baru di blok grup miliknya, lalu kabari tim agar tidak konflik saat merge ke `develop`.
+
+---
+
+## Pemetaan FITUR / TANTANGAN / RUBRIK
+
+**Fitur → Branch:** Login&registrasi(1) · Daftar buku(3 anggota/2 admin) · Upload foto(2) · Kelola kategori(2) · Peminjaman(4) · Pengembalian(5) · Riwayat(4) · Laporan(5) · Notifikasi jatuh tempo(5).
+
+**Tantangan → Branch:** 2 role(1) · cegah stok habis(4) · denda otomatis(4 logic+5 eksekusi) · buku terpopuler(5) · notifikasi H-3(5) · batas buku per anggota(4).
+
+**Aspek teknis wajib → bukti:**
+| # | Aspek | Branch | Bukti |
 |---|---|---|---|
-| Dev 1 | `feat/katalog` | `KatalogController`, `routes/katalog.php`, view `member/katalog`, `member/buku-detail` | `katalog.index` |
-| **Ryu (lead)** | `feat/peminjaman` | `PeminjamanController`, isi `PeminjamanService::pinjam`, `routes/peminjaman.php`, view `member/peminjaman`, `PeminjamanSeeder` | — |
-| Dev 3 | `feat/admin-buku` | `BukuController`, `KategoriController`, form requests, `routes/admin-buku.php`, view `admin/buku`, `admin/kategori`, `admin/dashboard`, `Buku/KategoriSeeder` | `admin.dashboard` |
-| Dev 4 | `feat/admin-pinjam` | isi `PengembalianService::kembalikan`, `PeminjamanAdminController`, `LaporanController`, `routes/admin-pinjam.php`, view `admin/peminjaman`, `admin/laporan` | — |
-| Dev 5 | `feat/notifikasi` | `Notifications/*`, `Listeners/KirimNotifPengembalian`, command reminder, `routes/console.php` | — |
-
-**File milik bersama (FROZEN — jangan diedit tanpa kesepakatan tim):**
-`config/perpus.php`, semua Enum, semua migration yang sudah merge, model di `app/Models`, interface di `app/Contracts`, event di `app/Events`, `routes/web.php`, `bootstrap/app.php`, `DatabaseSeeder.php`, layout di `resources/views/layouts`.
-
-### Rincian tugas tiap developer
-
-Pembagiannya **vertical slice**: tiap orang memegang satu fitur utuh dari controller sampai view, dengan file yang tidak beririsan. Berikut detail tugas dan tanggung jawab masing-masing.
-
-#### Dev 1 — `feat/katalog` · Katalog & detail buku
-**Fokus:** sisi anggota untuk menjelajah koleksi. Read-only — tidak menulis ke database, jadi paling aman dikerjakan paralel.
-
-Tugas:
-- [ ] Halaman katalog: grid buku, pencarian judul, filter kategori, pagination
-- [ ] Halaman detail buku: data bibliografi, cover, ketersediaan "X dari Y tersedia"
-- [ ] Tombol Pinjam yang mengarah ke route milik Dev 2 (`pinjam.store`) — sepakati nama route di awal
-- [ ] Ganti stub `katalog.index` jadi controller nyata
-
-Layar mock / FR: 03 Katalog, 04 Detail Buku · FR-04, FR-05
-Bergantung pada: model `Buku`, `Kategori`, accessor `Buku::tersedia` (fondasi)
-
-#### Ryu (lead) — `feat/peminjaman` · Aksi pinjam & riwayat
-**Fokus:** logika inti peminjaman + halaman pinjaman milik anggota. Sekaligus berperan menjaga kontrak FROZEN dan me-review PR tim.
-
-Tugas:
-- [ ] Implementasi `PeminjamanService::pinjam`: `DB::transaction` + `lockForUpdate`, validasi kuota lalu stok, buat `peminjaman` + `peminjaman_detail`, set `jatuh_tempo`
-- [ ] `PeminjamanController::store` (memproses tombol Pinjam)
-- [ ] Tangani `PeminjamanException` (kuota penuh, stok habis) jadi pesan sesuai mock
-- [ ] Halaman "Peminjaman Saya & Riwayat": pinjaman aktif + riwayat, badge status/telat
-- [ ] `PeminjamanSeeder` dengan data contoh sesuai mock
-
-Layar mock / FR: 05 Peminjaman Saya · FR-06, FR-07
-Bergantung pada: `PeminjamanServiceContract`, model, `config/perpus.php`
-
-#### Dev 3 — `feat/admin-buku` · Manajemen koleksi & dashboard
-**Fokus:** semua CRUD koleksi dan dashboard admin.
-
-Tugas:
-- [ ] CRUD Buku: list, tambah, edit, hapus, upload cover
-- [ ] CRUD Kategori
-- [ ] Form request validasi (`StoreBukuRequest`, `StoreKategoriRequest`)
-- [ ] Dashboard: total buku, pinjaman aktif, buku terpopuler
-- [ ] Seeder kategori + buku
-- [ ] Ganti stub `admin.dashboard` jadi controller nyata
-
-Layar mock / FR: 06 Dashboard, 07 Kelola Buku, 07B Kelola Kategori, 08 Form Buku · FR-09, FR-10, FR-11
-Bergantung pada: model `Buku`, `Kategori`, enum
-
-#### Dev 4 — `feat/admin-pinjam` · Pengembalian, denda & laporan
-**Fokus:** sisi admin untuk konfirmasi pengembalian dan pelaporan.
-
-Tugas:
-- [ ] Implementasi `PengembalianService::kembalikan`: hitung hari telat, denda, set `status` + `tanggal_kembali`, lalu `PeminjamanDikembalikan::dispatch(...)`
-- [ ] `PeminjamanAdminController`: daftar semua peminjaman + filter, tombol Kembalikan
-- [ ] `LaporanController`: laporan per rentang tanggal + export
-
-Layar mock / FR: 09 Kelola Peminjaman & Pengembalian, 10 Laporan · FR-08, FR-12
-Bergantung pada: `PengembalianServiceContract`, model, event `PeminjamanDikembalikan` (fondasi)
-Koordinasi: cukup dispatch event — **tidak** memanggil kode notifikasi (itu urusan Dev 5)
-
-#### Dev 5 — `feat/notifikasi` · Notifikasi & pengingat
-**Fokus:** seluruh kanal notifikasi, terdecouple dari modul lain lewat event.
-
-Tugas:
-- [ ] Notifikasi `JatuhTempoMendekat` (channel database + mail, `toMail`)
-- [ ] Notifikasi `PengembalianDikonfirmasi`
-- [ ] Listener `KirimNotifPengembalian` yang menangani event `PeminjamanDikembalikan`
-- [ ] Command `perpus:kirim-pengingat` (query H-3) + jadwal di `routes/console.php`
-- [ ] Endpoint tandai-dibaca + tampilan dropdown notifikasi
-
-Layar mock / FR: 05B Dropdown Notifikasi · FR-13, FR-14
-Bergantung pada: model `Peminjaman`, event `PeminjamanDikembalikan`, `config/perpus.php`
-Koordinasi: hanya mendengarkan event — **tidak** perlu menunggu Dev 4 selesai
-
-### Peta ketergantungan singkat
-
-- Semua orang bergantung ke **fondasi** (model, enum, interface, event) — bukan ke kode satu sama lain.
-- **Dev 1 → Dev 2 (Ryu):** lewat kesepakatan nama route `pinjam.store`.
-- **Dev 4 → Dev 5:** lewat event `PeminjamanDikembalikan` (Dev 4 dispatch, Dev 5 listen).
-- Tidak ada ketergantungan lain — itulah kenapa kelimanya bisa jalan paralel penuh.
+| 1 | MVC | semua | controller tipis, logic di Service/Model |
+| 2 | Relasi antar tabel | 1 | hasMany/belongsTo lengkap |
+| 3 | Migration | 1 | 6 migration + FK |
+| 4 | Seeder & Factory | 1 | Factory tiap model + seeder |
+| 5 | Validation | 2,3,4 | Form Request tiap input |
+| 6 | Auth & Authz | 1 | login/register + middleware `role` + Policy |
+| 7 | Upload file | 2 | upload `cover` buku |
 
 ---
 
-## 4. Aturan emas (wajib)
+## Skema Database (acuan bersama — sesuai ERD)
 
-1. **Fork dari `develop`, bukan dari branch teman.** Selalu mulai dari kontrak yang stabil.
-2. **Migration yang sudah merge bersifat read-only.** Mau ubah kolom? Bikin migration baru (`php artisan make:migration add_x_to_y_table`). Jangan pernah edit migration lama — itu merusak DB semua orang.
-3. **Program to interface.** Panggil service lewat interface (`PeminjamanServiceContract`), bukan kelas konkret. Implementasi boleh belum jadi — pakai fake/mock.
-4. **Jangan sentuh file milik developer lain.** Kalau butuh perubahan di file bersama (model/route/seeder), ajukan ke lead lewat PR kecil terpisah; jangan diam-diam edit di branch fiturmu.
-5. **Integrasi lintas modul lewat event, bukan panggilan langsung.** (Lihat bagian 7.)
-6. **PR kecil dan sering.** Jangan numpuk seminggu lalu merge sekaligus.
-7. **Rebase ke `develop` sebelum buka PR**, supaya konflik (kalau ada) selesai di sisimu, bukan di reviewer.
+Dibuat **Branch 1**.
 
----
+**kategori:** id(PK) · nama_kategori(unique) · deskripsi(text,nullable) · timestamps
+**users:** id(PK) · nama(50) · email(unique) · password(255 bcrypt) · role enum(`admin`/`anggota`) · timestamps
+**buku:** id(PK) · kategori_id(FK) · judul(75) · penulis(50) · penerbit(30) · tahun_terbit(year) · isbn(unique) · deskripsi(text,nullable) · cover(nullable path) · stok(int, TOTAL eksemplar) · timestamps
+**peminjaman:** id(PK) · user_id(FK) · tanggal_pinjam(date) · jatuh_tempo(date) · tanggal_kembali(date,nullable) · denda(int,default 0) · status enum(`dipinjam`/`selesai`/`terlambat`) · timestamps
+**peminjaman_detail:** id(PK) · peminjaman_id(FK) · buku_id(FK) · jumlah(int,default 1) · timestamps
+**notifications:** id(uuid PK) · type(string) · notifiable(morph→user) · data(json) · read_at(nullable) · timestamps
 
-## 5. Alur kerja harian
+**Relasi:** kategori 1–N buku · users 1–N peminjaman · users 1–N notifications · peminjaman 1–N peminjaman_detail · buku 1–N peminjaman_detail
 
-```bash
-# mulai branch (sekali)
-git checkout develop
-git pull origin develop
-git checkout -b feat/katalog        # sesuai branch-mu
+> **Tersedia (bukan kolom):** `stok - Σ jumlah pada peminjaman_detail yg peminjaman.status = 'dipinjam'`. Accessor `Buku::getTersediaAttribute()` (Branch 1).
 
-# selama kerja: commit kecil-kecil
-git add .
-git commit -m "feat(katalog): tambah pencarian judul"
-
-# sebelum push / buka PR: sinkron dulu dengan develop
-git fetch origin
-git rebase origin/develop           # selesaikan konflik di sini kalau ada
-git push origin feat/katalog
-```
-
-Lalu buka **Pull Request ke `develop`** di GitHub, isi checklist (bagian 10), minta 1 reviewer. Setelah di-approve dan CI hijau, **Squash and merge**.
+**config/library.php:** `tarif_denda_per_hari`(1000) · `max_hari_pinjam`(7) · `max_buku_per_pinjam`(3) · `notif_h_minus`(3)
+**Denda:** `max(0, hari_telat) x tarif_denda_per_hari`.
 
 ---
 
-## 6. Konvensi commit
+## 1. `feature/auth-foundation` — Dev 1
 
-Pakai format Conventional Commits: `tipe(scope): deskripsi singkat`.
+**Endpoint (semua 🟢):** `GET /`, `GET/POST /login`, `GET/POST /register`, `POST /logout`
 
-| Tipe | Untuk |
-|---|---|
-| `feat` | fitur baru |
-| `fix` | perbaikan bug |
-| `refactor` | ubah struktur tanpa ubah perilaku |
-| `test` | tambah/ubah test |
-| `chore` | konfigurasi, dependency, hal non-kode |
-| `docs` | dokumentasi |
+**Implementasi:**
+- [ ] `AuthController@showLogin` → view form login
+- [ ] `AuthController@login` → Form Request `LoginRequest`, `Auth::attempt`, regenerate session, redirect by role (admin→dashboard, anggota→katalog)
+- [ ] `AuthController@showRegister` → view form register
+- [ ] `AuthController@register` → `RegisterRequest`, buat user role `anggota`, hash password, auto-login
+- [ ] `AuthController@logout` → `Auth::logout` + invalidate session
 
-Contoh: `feat(peminjaman): validasi kuota sebelum simpan`, `fix(admin-pinjam): perbaiki hitung denda saat tepat waktu`.
+**Fondasi (dipakai semua):**
+- [ ] 6 migration + FK constraint
+- [ ] Model + relasi: `Kategori`, `User`(Notifiable), `Buku`, `Peminjaman`, `PeminjamanDetail`
+- [ ] Accessor `Buku::getTersediaAttribute()`
+- [ ] Factory tiap model + `DatabaseSeeder` (1 admin, anggota, kategori, buku, contoh peminjaman)
+- [ ] Middleware `role` + register di `bootstrap/app.php`; Policy untuk aksi admin
+- [ ] Proteksi grup route `member`/`admin`
+- [ ] `config/library.php`
+- [ ] Base class `PeminjamanNotification` (scaffold Dev 5)
 
----
-
-## 7. Integrasi antar-modul
-
-Modul tidak boleh saling memanggil kode konkret. Gunakan dua mekanisme dari fondasi:
-
-**Interface (untuk memanggil service):**
-```php
-public function store(PeminjamanServiceContract $service, Buku $buku) {
-    $service->pinjam(auth()->user(), $buku);
-}
-```
-
-**Event (untuk memicu aksi modul lain):** modul pengembalian tidak tahu apa-apa soal notifikasi — ia cukup dispatch event; modul notifikasi yang mendengarkan.
-```php
-// di PengembalianService (Dev 4) — tidak menyebut notifikasi sama sekali
-PeminjamanDikembalikan::dispatch($peminjaman);
-
-// di Listeners/KirimNotifPengembalian (Dev 5) — terpisah, auto-discovered
-public function handle(PeminjamanDikembalikan $event): void {
-    $event->peminjaman->user->notify(new PengembalianDikonfirmasi($event->peminjaman));
-}
-```
-
-Kalau butuh data dari entitas, ambil dari **model fondasi** (`Buku`, `Peminjaman`, `User`) — bukan dari kode modul lain.
+**Merge duluan.**
 
 ---
 
-## 8. Pengujian
+## 2. `feature/admin-book-category` — Dev 2
 
-- Tulis test untuk logika inti: alur pinjam (kuota & stok), kalkulasi denda, transisi status.
-- Modul boleh diuji **terisolasi** dengan mock kontrak — tidak perlu menunggu implementasi modul lain selesai:
-```php
-$this->mock(PeminjamanServiceContract::class)
-     ->shouldReceive('pinjam')->once()
-     ->andReturn(new Peminjaman(['status' => StatusPeminjaman::Dipinjam]));
-```
-- Untuk yang memicu event, pakai `Event::fake()` lalu `Event::assertDispatched(...)`.
-- Jalankan sebelum push:
-```bash
-php artisan test
-```
-- **CI menjalankan `php artisan test` di setiap PR ke `develop`.** PR dengan test gagal tidak boleh di-merge.
+**Endpoint:**
+| Method | URI | Controller@method | Implementasi |
+|---|---|---|---|
+| GET | `/admin/books` | `Admin\BookController@index` | list buku + pagination + filter kategori/judul/ISBN + kolom `tersedia` |
+| GET | `/admin/books/create` | `@create` | form tambah buku |
+| POST | `/admin/books` | `@store` | `BookRequest` validasi + **upload cover** ke storage; set stok |
+| GET | `/admin/books/{id}/edit` | `@edit` | form edit |
+| PUT | `/admin/books/{id}` | `@update` | update + ganti cover (hapus lama) |
+| DELETE | `/admin/books/{id}` | `@destroy` | cegah hapus kalau ada peminjaman aktif |
+| GET | `/admin/categories` | `Admin\CategoryController@index` | list + form inline (create/edit di halaman ini) |
+| POST | `/admin/categories` | `@store` | `CategoryRequest`, `nama_kategori` unik |
+| PUT | `/admin/categories/{id}` | `@update` | update kategori |
+| DELETE | `/admin/categories/{id}` | `@destroy` | cegah hapus kalau masih punya buku |
 
----
+- [ ] Form Request `BookRequest`: judul(75), penulis(50), penerbit(30), tahun_terbit, isbn unik, stok≥0, kategori_id exists, cover image|max
+- [ ] Upload cover ke `storage/app/public`, tampil thumbnail, flash message tiap aksi
 
-## 9. Definition of Done
-
-Sebuah PR dianggap selesai jika:
-- [ ] Fitur berjalan sesuai mock UI / kebutuhan (FR terkait di BRD).
-- [ ] Tidak mengedit migration lama, file bersama, atau file milik developer lain.
-- [ ] Ada test untuk logika baru yang relevan, dan `php artisan test` hijau.
-- [ ] Sudah di-rebase ke `develop` terbaru, tanpa konflik.
-- [ ] Stub route (kalau ada) sudah diganti implementasi nyata.
-- [ ] Di-review dan di-approve minimal 1 anggota tim.
+**Depend on:** Branch 1.
 
 ---
 
-## 10. Checklist PR
+## 3. `feature/member-catalog` — Dev 3
 
-Salin ke deskripsi setiap Pull Request:
+**Endpoint:**
+| Method | URI | Controller@method | Implementasi |
+|---|---|---|---|
+| GET | `/member/books` | `Member\BookController@index` | list buku DB + pagination + search judul/penulis + filter kategori + badge `tersedia` |
+| GET | `/member/books/{id}` | `@show` | detail buku + tombol "Tambah ke peminjaman" |
+| 🔵 GET | `/member/cart` | `Member\CartController@index` | lihat isi keranjang (session) |
+| 🔵 POST | `/member/cart` | `@store` | tambah buku ke keranjang, cek `tersedia` & `max_buku_per_pinjam` |
+| 🔵 DELETE | `/member/cart/{bukuId}` | `@destroy` | hapus buku dari keranjang |
 
-```markdown
-## Apa yang dikerjakan
-- ...
+- [ ] Keranjang berbasis session; tombol "Ajukan Peminjaman" submit ke `member.loans.store` (Branch 4)
+- [ ] Empty state + UI responsif Bootstrap 5
 
-## Checklist
-- [ ] Branch dari develop & sudah rebase
-- [ ] Hanya menyentuh file milik branch ini
-- [ ] Tidak mengedit migration yang sudah merge
-- [ ] `php artisan test` hijau di lokal
-- [ ] Integrasi lintas modul lewat interface/event (bukan panggilan langsung)
-- [ ] Screenshot UI dilampirkan (untuk perubahan tampilan)
-```
-
----
-
-## 11. Gaya kode
-
-- Ikuti **PSR-12** dan konvensi Laravel. Jalankan `./vendor/bin/pint` sebelum commit kalau tersedia.
-- **Controller tipis, logika di service.** Jangan taruh aturan bisnis di controller atau view.
-- Penamaan: kelas `PascalCase`, method/variabel `camelCase`, tabel & kolom domain `snake_case` Bahasa Indonesia (`tanggal_pinjam`, `jatuh_tempo`) sesuai skema.
-- Jangan hardcode angka bisnis (lama pinjam, tarif denda, kuota) — ambil dari `config('perpus.*')`.
-- Komentar secukupnya; kode yang jelas lebih baik daripada komentar yang banyak.
+**Depend on:** Branch 1 & 2. Sepakati payload ke Dev 4: array `{buku_id, jumlah}`.
 
 ---
 
-Pertanyaan soal kepemilikan file atau konflik kontrak? Tanyakan ke **lead (Ryu)** sebelum mengedit apa pun yang berstatus FROZEN.
+## 4. `feature/loan-system` — Dev 4 (header-detail)
+
+**Endpoint:**
+| Method | URI | Controller@method | Implementasi |
+|---|---|---|---|
+| POST | `/member/loans` | `Member\LoanController@store` | dari keranjang → **1 peminjaman + N detail** dalam DB transaction; set tanggal_pinjam, jatuh_tempo, status `dipinjam`; **validasi stok** & **batas pinjam** |
+| GET | `/member/loans` | `@index` | peminjaman aktif (`dipinjam`/`terlambat`) milik user + bukunya |
+| GET | `/member/loans/history` | `@history` | peminjaman `selesai` (Riwayat) |
+| GET | `/member/loans/{id}` | `@show` | detail 1 transaksi + estimasi denda kalau telat |
+| GET | `/admin/loans` | `Admin\LoanController@index` | semua peminjaman + filter status + pagination |
+| GET | `/admin/loans/{id}` | `@show` | detail transaksi (header + semua detail) |
+
+- [ ] `StoreLoanRequest`: validasi item keranjang, `tersedia >= jumlah` tiap buku
+- [ ] **Batas pinjam:** total buku aktif anggota ≤ `max_buku_per_pinjam`
+- [ ] **`LoanService`**: `hitungDenda(Peminjaman $p)`, `tandaiTerlambat()` — kontrak disepakati dgn Dev 5
+
+**Depend on:** Branch 1 (model+accessor), Branch 3 (keranjang).
+
+---
+
+## 5. `feature/returns-reports-dashboard` — Dev 5
+
+**Endpoint:**
+| Method | URI | Controller@method | Implementasi |
+|---|---|---|---|
+| GET | `/admin/returns` | `Admin\ReturnController@index` | daftar peminjaman belum kembali (`dipinjam`/`terlambat`) |
+| POST | `/admin/returns` | `@store` | set `tanggal_kembali`, hitung `denda` via `LoanService`, set status `selesai`/`terlambat`; stok pulih otomatis |
+| GET | `/admin/reports` | `Admin\ReportController@index` | rekap: total peminjaman, **buku terpopuler** (agregasi peminjaman_detail), total denda, jumlah terlambat + filter tanggal |
+| 🔵 GET | `/admin/reports/export` | `@export` | export CSV/PDF (opsional) |
+| GET | `/admin/dashboard` | `Admin\DashboardController@index` | kartu statistik query nyata (buku, anggota, peminjaman aktif, terlambat) |
+| 🔵 GET | `/member/notifications` | `Member\NotificationController@index` | daftar notifikasi anggota |
+| 🔵 POST | `/member/notifications/{id}/read` | `@markRead` | tandai `read_at` |
+
+- [ ] **Notifikasi H-3:** command `php artisan loans:check-due` (jadwal harian) → kirim ke anggota yg `jatuh_tempo` = hari+`notif_h_minus`; sekalian set `terlambat` yg lewat due
+- [ ] Notifikasi saat terlambat & konfirmasi pengembalian via `User->notify(...)`
+
+**Depend on:** Branch 1 (model+scaffold), Branch 4 (`LoanService`).
+
+---
+
+## Aturan Main Tim
+
+1. Commit kecil & jelas: `feat(loan): cegah pinjam saat stok habis`.
+2. Tambah/ubah route hanya di blok grup milik sendiri; kabari tim.
+3. Jangan ubah migration orang lain tanpa kabar.
+4. Stok jangan dikurangi manual — pakai accessor `tersedia`.
+5. MVC: controller tipis, logic di Service/Model.
