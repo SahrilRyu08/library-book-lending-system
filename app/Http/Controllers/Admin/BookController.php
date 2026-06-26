@@ -104,22 +104,59 @@ class BookController extends Controller
 
     public function edit($id)
     {
-        $book = $this->dummyBooks()->firstWhere('id', (int) $id) ?? $this->dummyBooks()->first();
-        return view('admin.books.form', [
-            'book'       => $book,
-            'categories' => $this->dummyCategories(),
-        ]);
+        $book = Buku::findOrFail($id);
+
+        $categories = Kategori::all();
+
+        return view('admin.books.form', compact('book', 'categories'));
     }
 
     public function update(Request $request, $id)
     {
-        return redirect()->route('admin.books.index')
-                         ->with('success', 'Buku berhasil diperbarui! (preview dummy)');
+        $book = Buku::findOrFail($id);
+
+        $validated = $request->validate([
+            'judul'         => 'required|max:75',
+            'penulis'       => 'required|max:50',
+            'penerbit'      => 'required|max:30',
+            'tahun_terbit'  => 'required|digits:4',
+            'isbn'          => 'required|max:20|unique:buku,isbn,' . $book->id,
+            'kategori_id'   => 'required|exists:kategori,id',
+            'stok'          => 'required|integer|min:0',
+            'deskripsi'     => 'nullable',
+            'cover'         => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        if ($request->hasFile('cover')) {
+
+            // Hapus cover lama
+            if ($book->cover) {
+                Storage::disk('public')->delete($book->cover);
+            }
+
+            // Simpan cover baru
+            $validated['cover'] = $request->file('cover')->store('covers', 'public');
+        }
+
+        $book->update($validated);
+
+        return redirect()
+            ->route('admin.books.index')
+            ->with('success', 'Buku berhasil diperbarui.');
     }
 
     public function destroy($id)
     {
-        return redirect()->route('admin.books.index')
-                         ->with('success', 'Buku berhasil dihapus! (preview dummy)');
+        $book = Buku::findOrFail($id);
+
+        if ($book->cover) {
+            Storage::disk('public')->delete($book->cover);
+        }
+
+        $book->delete();
+
+        return redirect()
+            ->route('admin.books.index')
+            ->with('success', 'Buku berhasil dihapus.');
     }
 }
