@@ -25,20 +25,20 @@ class Buku extends Model
     ];
 
     public function kategori() {
-        return $this->belongsTo(Kategori::class);
+        return $this->belongsTo(Kategori::class, 'kategori_id');
     }
 
     public function detailPeminjaman() {
         return $this -> hasMany(PeminjamanDetail::class);
     }
 
-    public function getTersediaAttribute() {
+    public function tersedia() {
         $dipinjam = $this->detailPeminjaman()
             ->whereHas('peminjaman', function($query) {
                 $query->where('status','dipinjam');
             })->sum('jumlah');
 
-        return max(0, $this->stock -$dipinjam);
+        return max(0, $this->stok -$dipinjam);
 
     }
 }

@@ -3,36 +3,55 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Buku;
+use App\Models\Peminjaman;
+use App\Models\PeminjamanDetail;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
-/**
- * Admin DashboardController - DUMMY untuk preview UI
- */
 class DashboardController extends Controller
 {
     public function index()
     {
-        $popularBooks = collect([
-            ['judul' => 'Laskar Pelangi',  'kategori' => 'Fiksi',             'total' => 42],
-            ['judul' => 'Atomic Habits',   'kategori' => 'Pengembangan Diri', 'total' => 35],
-            ['judul' => 'Bumi Manusia',    'kategori' => 'Fiksi',             'total' => 29],
-            ['judul' => 'Sapiens',         'kategori' => 'Non-Fiksi',         'total' => 21],
-            ['judul' => 'Deep Work',       'kategori' => 'Pengembangan Diri', 'total' => 18],
-        ])->map(function ($d) {
-            $b = new \stdClass();
-            $b->judul          = $d['judul'];
-            $b->total_dipinjam = $d['total'];
-            $kat = new \stdClass();
-            $kat->nama_kategori = $d['kategori'];
-            $b->kategori = $kat;
-            return $b;
-        });
+        // Statistik Dashboard
+        $bookCount = Buku::count();
 
-        return view('admin.dashboard', [
-            'totalBuku'      => 128,
-            'sedangDipinjam' => 24,
-            'terlambat'      => 5,
-            'totalAnggota'   => 60,
-            'popularBooks'   => $popularBooks,
-        ]);
+        $activeLoan = Peminjaman::where('status', 'dipinjam')
+            ->count();
+
+        $lateLoan = Peminjaman::where('status', 'terlambat')
+            ->count();
+
+        $memberCount = User::where('role', 'member')
+            ->count();
+
+        // Buku Terpopuler
+        $popularBooks = PeminjamanDetail::select(
+            'buku_id',
+            DB::raw('SUM(jumlah) as total_dipinjam')
+        )
+            ->with([
+                'buku.kategori'
+            ])
+            ->groupBy('buku_id')
+            ->orderByDesc('total_dipinjam')
+            ->take(5)
+            ->get()
+            ->map(function ($detail) {
+
+                $buku = $detail->buku;
+
+                $buku->total_dipinjam = $detail->total_dipinjam;
+
+                return $buku;
+            });
+
+        return view('admin.dashboard', compact(
+            'bookCount',
+            'lateLoan',
+            'activeLoan',
+            'memberCount',
+            'popularBooks'
+        ));
     }
 }
