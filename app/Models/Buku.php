@@ -17,7 +17,7 @@ class Buku extends Model
         'tahun_terbit',
         'isbn',
         'cover',
-        'stock'
+        'stok'
     ];
 
     protected $appends = [
