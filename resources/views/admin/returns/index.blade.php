@@ -38,7 +38,7 @@
             @forelse($returns as $loan)
                 <tr>
                     <td>{{ $loan->user->nama ?? '-' }}</td>
-                    <td>{{ $loan->detail->first()->buku->judul ?? '-' }}</td>
+                    <td>{{ $loan->details->first()->buku->judul ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_kembali)->format('d M Y') }}</td>
                     <td>
@@ -68,6 +68,7 @@
                         </form>
                     </td>
                 </tr>
+
             @empty
                 <tr>
                     <td colspan="7" class="text-center moco-note py-4">
@@ -78,9 +79,9 @@
         </tbody>
     </table>
 </div>
-
-<div class="mt-3">{{ $returns->links() }}</div>
-
+<div class="mt-4">
+    {{ $returns->appends(request()->query())->links('components.pagination') }}
+</div>
 <p class="moco-note mt-2">
     * Denda dihitung otomatis: Rp 1.000 per hari keterlambatan.
 </p>
