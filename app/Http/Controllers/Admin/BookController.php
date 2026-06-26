@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Buku;
+use App\Models\Kategori;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Admin BookController - DUMMY untuk preview UI
@@ -43,28 +46,60 @@ class BookController extends Controller
 
     public function index(Request $request)
     {
-        $books = $this->dummyBooks();
-        if ($request->search) {
-            $q = strtolower($request->search);
-            $books = $books->filter(fn($b) => str_contains(strtolower($b->judul), $q));
+        //dd(Buku::count());
+        $books = Buku::with('kategori');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $books->where(function ($query) use ($search) {
+                $query->where('judul', 'like', "%{$search}%")
+                    ->orWhere('penulis', 'like', "%{$search}%")
+                    ->orWhere('isbn', 'like', "%{$search}%");
+            });
         }
-        $page = $request->get('page', 1);
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
-            $books->forPage($page, 10), $books->count(), 10, $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-        return view('admin.books.index', ['books' => $paginator]);
+
+        $books = $books->orderBy('judul')
+                    ->paginate(10)
+                    ->withQueryString();
+
+        return view('admin.books.index', [
+            'books' => $books
+        ]);
     }
 
     public function create()
     {
-        return view('admin.books.form', ['categories' => $this->dummyCategories()]);
+        $categories = Kategori::all();
+
+        return view('admin.books.form', [
+            'categories' => $categories
+        ]);
     }
 
     public function store(Request $request)
     {
-        return redirect()->route('admin.books.index')
-                         ->with('success', 'Buku berhasil ditambahkan! (preview dummy)');
+        $validated = $request->validate([
+            'judul'         => 'required|max:75',
+            'penulis'       => 'required|max:50',
+            'penerbit'      => 'required|max:30',
+            'tahun_terbit'  => 'required|digits:4',
+            'isbn'          => 'required|max:20|unique:buku,isbn',
+            'kategori_id'   => 'required|exists:kategori,id',
+            'stok'          => 'required|integer|min:0',
+            'deskripsi'     => 'nullable',
+            'cover'         => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        if ($request->hasFile('cover')) {
+            $validated['cover'] = $request->file('cover')->store('covers', 'public');
+        }
+
+        Buku::create($validated);
+
+        return redirect()
+            ->route('admin.books.index')
+            ->with('success', 'Buku berhasil ditambahkan.');
     }
 
     public function edit($id)
