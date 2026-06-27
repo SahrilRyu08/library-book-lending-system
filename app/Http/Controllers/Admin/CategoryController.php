@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Kategori;
 
 /**
  * Admin CategoryController - DUMMY untuk preview UI
@@ -30,26 +31,57 @@ class CategoryController extends Controller
 
     public function index()
     {
-        return view('admin.categories.index', [
-            'categories' => $this->dummyCategories(),
-        ]);
+        $categories = Kategori::withCount('buku')
+                        ->orderBy('nama_kategori')
+                        ->get();
+
+        return view('admin.categories.index', compact('categories'));
     }
 
     public function store(Request $request)
     {
-        return redirect()->route('admin.categories.index')
-                         ->with('success', 'Kategori berhasil ditambahkan! (preview dummy)');
+        $validated = $request->validate([
+            'nama_kategori' => 'required|max:30|unique:kategori,nama_kategori',
+            'deskripsi'     => 'nullable',
+        ]);
+
+        kategori::create($validated);
+
+        return redirect()
+            ->route('admin.categories.index')
+            ->with('success', 'Kategori berhasil ditambahkan.');
     }
 
     public function update(Request $request, $id)
     {
-        return redirect()->route('admin.categories.index')
-                         ->with('success', 'Kategori berhasil diperbarui! (preview dummy)');
+        $category = kategori::findOrFail($id);
+
+        $validated = $request->validate([
+            'nama_kategori' => 'required|max:30|unique:kategori,nama_kategori,' . $category->id,
+            'deskripsi'     => 'nullable',
+        ]);
+
+        $category->update($validated);
+
+        return redirect()
+            ->route('admin.categories.index')
+            ->with('success', 'Kategori berhasil diperbarui.');
     }
 
     public function destroy($id)
     {
-        return redirect()->route('admin.categories.index')
-                         ->with('success', 'Kategori berhasil dihapus! (preview dummy)');
+        $category = kategori::findOrFail($id);
+
+        if ($category->buku()->count() > 0) {
+            return redirect()
+                ->route('admin.categories.index')
+                ->with('error', 'Kategori tidak dapat dihapus karena masih digunakan oleh buku.');
+        }
+
+        $category->delete();
+
+        return redirect()
+            ->route('admin.categories.index')
+            ->with('success', 'Kategori berhasil dihapus.');
     }
 }
