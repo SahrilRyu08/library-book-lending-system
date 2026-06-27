@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('isbn', 20)->unique();
             $table->text('deskripsi')->nullable();
             $table->unsignedBigInteger('stok')->default(0);
+            $table->string('cover');
             $table->timestamps();
         });
     }

@@ -24,7 +24,7 @@ php artisan serve
 
 Admin
 
-admin@mail.com
+admin@moco.app
 password
 
 Member
