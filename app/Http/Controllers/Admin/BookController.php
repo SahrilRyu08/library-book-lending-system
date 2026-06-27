@@ -79,6 +79,7 @@ class BookController extends Controller
 
     public function store(Request $request)
     {
+        
         $validated = $request->validate([
             'judul'         => 'required|max:75',
             'penulis'       => 'required|max:50',
@@ -88,7 +89,7 @@ class BookController extends Controller
             'kategori_id'   => 'required|exists:kategori,id',
             'stok'          => 'required|integer|min:0',
             'deskripsi'     => 'nullable',
-            'cover'         => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'cover'         => 'required|image|mimes:jpg,jpeg,png|max:2048'
         ]);
 
         if ($request->hasFile('cover')) {
