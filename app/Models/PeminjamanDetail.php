@@ -10,16 +10,29 @@ class PeminjamanDetail extends Model
     use HasFactory;
 
     protected $table = 'peminjaman_detail';
+
+    /**
+     * Kolom yang boleh diisi secara massal
+     */
     protected $fillable = [
         'peminjaman_id',
         'buku_id',
         'jumlah',
     ];
 
-    public function peminjaman() {
+    /**
+     * Relasi: detail belongs to satu peminjaman (header)
+     */
+    public function peminjaman()
+    {
         return $this->belongsTo(Peminjaman::class);
     }
-    public function buku() {
+
+    /**
+     * Relasi: detail belongs to satu buku
+     */
+    public function buku()
+    {
         return $this->belongsTo(Buku::class);
     }
 }
