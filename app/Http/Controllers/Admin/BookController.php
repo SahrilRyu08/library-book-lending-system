@@ -150,10 +150,25 @@ class BookController extends Controller
     {
         $book = Buku::findOrFail($id);
 
-        if ($book->cover) {
+        // Cek apakah buku masih memiliki peminjaman aktif
+        $isBorrowed = $book->detailPeminjaman()
+            ->whereHas('peminjaman', function ($query) {
+                $query->where('status', 'dipinjam');
+            })
+            ->exists();
+
+        if ($isBorrowed) {
+            return redirect()
+                ->route('admin.books.index')
+                ->with('error', 'Buku tidak dapat dihapus karena sedang dipinjam.');
+        }
+
+        // Hapus cover jika ada
+        if ($book->cover && Storage::disk('public')->exists($book->cover)) {
             Storage::disk('public')->delete($book->cover);
         }
 
+        // Hapus buku
         $book->delete();
 
         return redirect()
