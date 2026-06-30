@@ -38,7 +38,7 @@ class Buku extends Model
                 $query->where('status','dipinjam');
             })->sum('jumlah');
 
-        return max(0, $this->stock -$dipinjam);
+        return max(0, $this->stok -$dipinjam);
 
     }
 }
