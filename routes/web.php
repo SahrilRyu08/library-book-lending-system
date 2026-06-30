@@ -32,7 +32,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 | Member Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('member')->name('member.')->group(function () {
+Route::
+//    middleware(['auth'])->
+prefix('member')->name('member.')->group(function () {
 
     // Katalog Buku
     Route::get('/books', [MemberBookController::class, 'index'])->name('books.index');
@@ -48,7 +50,7 @@ Route::prefix('member')->name('member.')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])
         ->name('notifications.index');
 
-    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])
         ->name('notifications.read');
 });
 
@@ -113,7 +115,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])
         ->name('reports.index');
 
-    // Export Laporan
-    Route::get('/reports/export', [ReportController::class, 'export'])
-        ->name('reports.export');
+//    // Export Laporan
+//    Route::get('/reports/export', [ReportController::class, 'export'])
+//        ->name('reports.export');
+
+    Route::get(
+        '/notifications',
+        [\App\Http\Controllers\Admin\NotificationController::class, 'index']
+    )->name('notifications.index');
+
+    Route::post(
+        '/notifications/{id}/read',
+        [\App\Http\Controllers\Admin\NotificationController::class, 'markRead']
+    )->name('notifications.read');
+
+    Route::post(
+        '/notifications/read-all',
+        [\App\Http\Controllers\Admin\NotificationController::class, 'markAllRead']
+    )->name('notifications.read-all');
 });
