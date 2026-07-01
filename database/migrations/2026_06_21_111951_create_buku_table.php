@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('kategori_id')->constrained('kategori');
             $table->string('judul', 75);
             $table->string('penulis', 50);
-            $table->string('penerbit', 30);
+            $table->string('penerbit', 100);
             $table->year('tahun_terbit');
             $table->string('isbn', 20)->unique();
             $table->text('deskripsi')->nullable();
