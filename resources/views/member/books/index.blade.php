@@ -30,7 +30,7 @@
 <div class="row g-3">
     @forelse($books as $book)
         <div class="col-md-3 col-sm-4 col-6">
-            <div class="moco-book-card {{ $book->stok <= 0 ? 'is-out' : '' }}">
+            <div class="moco-book-card {{ $book->tersedia <= 0 ? 'is-out' : '' }}">
                 {{-- Cover --}}
                 <div class="moco-book-cover">
                     @if($book->cover)
@@ -46,15 +46,18 @@
             <div class="moco-note mb-1" style="font-size:12px;">
                 {{ $book->kategori->nama_kategori ?? '-' }}
             </div>
+
+            {{-- Bagian Badge Tersedia --}}
             <div class="mb-2">
-                @if($book->stok > 0)
-                    <span class="badge-moco-stock">Stok: {{ $book->stok }}</span>
+                @if($book->tersedia > 0)
+                    <span class="badge-moco-stock">Tersedia: {{ $book->tersedia }}</span>
                 @else
                     <span class="badge-moco-out">Stok Habis</span>
                 @endif
             </div>
 
-            @if($book->stok > 0)
+            {{-- Bagian Tombol Detail --}}
+            @if($book->tersedia > 0)
                 <a href="{{ route('member.books.show', $book->id) }}"
                 class="btn btn-moco btn-sm w-100">Lihat Detail</a>
             @else

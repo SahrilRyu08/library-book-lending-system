@@ -35,6 +35,11 @@ Route::prefix('member')->name('member.')->group(function () {
     Route::get('/books',        [MemberBookController::class, 'index'])->name('books.index');
     Route::get('/books/{id}',   [MemberBookController::class, 'show'])->name('books.show');
 
+    // Keranjang
+    Route::get('/cart', [\App\Http\Controllers\Member\CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart', [\App\Http\Controllers\Member\CartController::class, 'store'])->name('cart.store');
+    Route::delete('/cart/{bukuId}', [\App\Http\Controllers\Member\CartController::class, 'destroy'])->name('cart.destroy');
+
     // Peminjaman
     Route::get('/loans',            [MemberLoanController::class, 'index'])->name('loans.index');
     Route::post('/loans',           [MemberLoanController::class, 'store'])->name('loans.store');
