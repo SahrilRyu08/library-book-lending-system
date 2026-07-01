@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Buku extends Model
 {
     use HasFactory;
+
     protected $table = 'buku';
+
     protected $fillable = [
         'kategori_id',
         'judul',
@@ -16,29 +18,31 @@ class Buku extends Model
         'penerbit',
         'tahun_terbit',
         'isbn',
+        'deskripsi',
         'cover',
-        'stok'
+        'stok',
     ];
 
-    protected $appends = [
-        'tersedia'
-    ];
+    protected $appends = ['tersedia'];
 
-    public function kategori() {
-        return $this->belongsTo(Kategori::class, 'kategori_id');
+    public function kategori()
+    {
+        return $this->belongsTo(Kategori::class);
     }
 
-    public function detailPeminjaman() {
-        return $this -> hasMany(PeminjamanDetail::class);
+    public function detailPeminjaman()
+    {
+        return $this->hasMany(PeminjamanDetail::class);
     }
 
-    public function tersedia() {
+    public function getTersediaAttribute(): int
+    {
         $dipinjam = $this->detailPeminjaman()
-            ->whereHas('peminjaman', function($query) {
-                $query->where('status','dipinjam');
-            })->sum('jumlah');
+            ->whereHas('peminjaman', function ($query) {
+                $query->where('status', 'dipinjam');
+            })
+            ->sum('jumlah');
 
-        return max(0, $this->stok -$dipinjam);
-
+        return max(0, $this->stok - $dipinjam);
     }
 }
