@@ -114,7 +114,7 @@
                 reader.onload = (ev) => {
                     const box = document.getElementById('uploadBox');
                     box.innerHTML = `<img src="${ev.target.result}"
-                                                                                style="max-height:200px;border-radius:8px;object-fit:cover;max-width:100%;">`;
+                                                                                        style="max-height:200px;border-radius:8px;object-fit:cover;max-width:100%;">`;
                 };
                 reader.readAsDataURL(file);
             });

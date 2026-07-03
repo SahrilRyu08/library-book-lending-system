@@ -83,7 +83,7 @@ class BookController extends Controller
         $validated = $request->validate([
             'judul'         => 'required|max:75',
             'penulis'       => 'required|max:50',
-            'penerbit'      => 'required|max:30',
+            'penerbit'      => 'required|max:100',
             'tahun_terbit'  => 'required|digits:4',
             'isbn'          => 'required|max:20|unique:buku,isbn',
             'kategori_id'   => 'required|exists:kategori,id',
@@ -119,7 +119,7 @@ class BookController extends Controller
         $validated = $request->validate([
             'judul'         => 'required|max:75',
             'penulis'       => 'required|max:50',
-            'penerbit'      => 'required|max:30',
+            'penerbit'      => 'required|max:100',
             'tahun_terbit'  => 'required|digits:4',
             'isbn'          => 'required|max:20|unique:buku,isbn,' . $book->id,
             'kategori_id'   => 'required|exists:kategori,id',
