@@ -34,7 +34,7 @@
                 {{-- Cover --}}
                 <div class="moco-book-cover">
                     @if($book->cover)
-                        <img src="{{ asset('storage/' . $book->cover) }}" alt="{{ $book->judul }}">
+                        <img src="{{ asset('images/books/' . $book->cover) }}" alt="{{ $book->judul }}">
                     @else
                         <i class="bi bi-image fs-2"></i>
                     @endif
