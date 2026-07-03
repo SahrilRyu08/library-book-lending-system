@@ -15,14 +15,14 @@ class LoanController extends Controller
     public function index(Request $request)
     {
         $query = Peminjaman::with(['user', 'detail.buku'])
-                          ->whereIn('status', ['pending', 'dipinjam']);
+                        ->whereIn('status', ['pending', 'dipinjam']);
 
         // Search filter
         if ($request->search) {
             $q = strtolower($request->search);
             $query->whereHas('user', function($q_user) use ($q) {
                 $q_user->whereRaw("LOWER(name) LIKE ?", ["%{$q}%"])
-                       ->orWhereRaw("LOWER(email) LIKE ?", ["%{$q}%"]);
+                    ->orWhereRaw("LOWER(email) LIKE ?", ["%{$q}%"]);
             })->orWhereHas('detail.buku', function($q_buku) use ($q) {
                 $q_buku->whereRaw("LOWER(judul) LIKE ?", ["%{$q}%"]);
             });
@@ -35,14 +35,14 @@ class LoanController extends Controller
             $query->where('status', 'dipinjam');
         } elseif ($request->status === 'terlambat') {
             $query->where('status', 'dipinjam')
-                  ->whereDate('jatuh_tempo', '<', Carbon::now());
+                ->whereDate('jatuh_tempo', '<', Carbon::now());
         } elseif ($request->status === 'mendekati') {
             $query->where('status', 'dipinjam')
-                  ->whereDate('jatuh_tempo', '>=', Carbon::now())
-                  ->whereDate('jatuh_tempo', '<=', Carbon::now()->addDays(3));
+                ->whereDate('jatuh_tempo', '>=', Carbon::now())
+                ->whereDate('jatuh_tempo', '<=', Carbon::now()->addDays(3));
         } elseif ($request->status === 'aman') {
             $query->where('status', 'dipinjam')
-                  ->whereDate('jatuh_tempo', '>', Carbon::now()->addDays(3));
+                ->whereDate('jatuh_tempo', '>', Carbon::now()->addDays(3));
         }
 
         $loans = $query->orderBy('jatuh_tempo', 'asc')->paginate(10);

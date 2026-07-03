@@ -15,7 +15,7 @@ class ReturnController extends Controller
     public function index(Request $request)
     {
         $query = Peminjaman::with(['user', 'detail.buku'])
-                          ->where('status', 'selesai');
+                        ->where('status', 'selesai');
 
         // Search filter
         if ($request->search) {
@@ -76,12 +76,5 @@ class ReturnController extends Controller
         } else {
             return back()->with('success', 'Pengembalian dicatat tanpa denda');
         }
-    }
-}
-
-    public function store(Request $request)
-    {
-        return redirect()->route('admin.returns.index')
-                         ->with('success', 'Pengembalian berhasil dicatat! Denda dihitung otomatis.');
     }
 }
