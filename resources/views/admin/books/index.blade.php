@@ -46,7 +46,7 @@
                     </td>
                     <td><strong>{{ $book->judul }}</strong></td>
                     <td>{{ $book->penulis }}</td>
-                    <td>{{ $book->kategori->nama_kategori ?? '-' }}</td>
+                    <td>{{ $book->kategori->nama ?? '-' }}</td>
                     <td>
                         @if($book->stok > 0)
                             <span class="badge-moco-stock">{{ $book->stok }}</span>

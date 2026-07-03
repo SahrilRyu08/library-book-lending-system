@@ -50,8 +50,8 @@
                 <tr>
                     <td style="color:var(--moco-blue);font-weight:600;">{{ $i + 1 }}</td>
                     <td><strong>{{ $book->judul }}</strong></td>
-                    <td>{{ $book->kategori->nama_kategori ?? '-' }}</td>
-                    <td>{{ $book->total_dipinjam }}x</td>
+                    <td>{{ $book->kategori->nama ?? '-' }}</td>
+                    <td>{{ $book->total_dipinjam ?? 0 }}x</td>
                 </tr>
             @endforeach
         </tbody>

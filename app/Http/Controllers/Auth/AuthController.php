@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
-/**
- * AuthController - DUMMY untuk preview UI
- * Login/register tidak benar-benar cek database.
- * Ganti isi method ini dengan logic Auth::attempt() saat implementasi nyata.
- */
 class AuthController extends Controller
 {
     public function showLogin()
@@ -19,12 +17,24 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // --- DUMMY: langsung redirect sesuai "role" yang diketik ---
-        // Saat implementasi nyata, ganti dengan Auth::attempt()
-        if ($request->email === 'admin@moco.app') {
-            return redirect()->route('admin.dashboard');
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if (Auth::attempt($validated)) {
+            $request->session()->regenerate();
+            
+            // Redirect sesuai role
+            if (auth()->user()->role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+            return redirect()->route('member.books.index');
         }
-        return redirect()->route('member.books.index');
+
+        return back()->withErrors([
+            'email' => 'Email atau password salah.',
+        ])->onlyInput('email');
     }
 
     public function showRegister()
@@ -34,12 +44,30 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        // DUMMY: langsung ke halaman member
-        return redirect()->route('member.books.index');
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'member',
+        ]);
+
+        Auth::login($user);
+
+        return redirect()->route('member.books.index')->with('success', 'Pendaftaran berhasil!');
     }
 
     public function logout(Request $request)
     {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 }
