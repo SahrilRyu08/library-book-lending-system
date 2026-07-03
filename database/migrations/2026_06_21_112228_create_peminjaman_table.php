@@ -18,7 +18,9 @@ return new class extends Migration
             $table->date('jatuh_tempo');
             $table->date('tanggal_kembali')->nullable();
             $table->unsignedInteger('denda')->default(0);
-            $table->enum('status',['dipinjam','selesai','terlambat'])->default('dipinjam');
+            $table->enum('status',['pending','dipinjam','selesai','terlambat'])->default('pending');
+            $table->timestamp('approved_at')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users');
             $table->timestamps();
             $table->index(['user_id', 'status']);
             $table->index(['jatuh_tempo']);

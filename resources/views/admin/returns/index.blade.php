@@ -28,18 +28,22 @@
                 <th>Anggota</th>
                 <th>Buku</th>
                 <th>Tgl Pinjam</th>
+                <th>Jatuh Tempo</th>
                 <th>Tgl Kembali</th>
                 <th>Status</th>
                 <th>Denda</th>
-                <th></th>
             </tr>
         </thead>
         <tbody>
             @forelse($returns as $loan)
                 <tr>
-                    <td>{{ $loan->user->nama ?? '-' }}</td>
+                    <td>
+                        <div style="font-weight:600;">{{ $loan->user->name ?? '-' }}</div>
+                        <div class="moco-note">{{ $loan->user->email ?? '' }}</div>
+                    </td>
                     <td>{{ $loan->detail->first()->buku->judul ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($loan->jatuh_tempo)->format('d M Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_kembali)->format('d M Y') }}</td>
                     <td>
                         @if($loan->denda > 0)
@@ -57,16 +61,6 @@
                             <span class="moco-note">Rp 0</span>
                         @endif
                     </td>
-                    <td>
-                        <form method="POST" action="{{ route('admin.returns.store') }}">
-                            @csrf
-                            <input type="hidden" name="loan_id" value="{{ $loan->id }}">
-                            <button type="submit" class="btn btn-sm btn-moco"
-                                    onclick="return confirm('Konfirmasi pengembalian buku ini?')">
-                                Kembalikan
-                            </button>
-                        </form>
-                    </td>
                 </tr>
             @empty
                 <tr>
@@ -81,7 +75,7 @@
 
 <div class="mt-3">{{ $returns->links() }}</div>
 
-<p class="moco-note mt-2">
-    * Denda dihitung otomatis: Rp 1.000 per hari keterlambatan.
+<p class="moco-note mt-3 mb-0">
+    <strong>Denda:</strong> Rp 500 per hari keterlambatan pengembalian buku.
 </p>
 @endsection

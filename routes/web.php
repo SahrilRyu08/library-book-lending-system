@@ -29,7 +29,7 @@ Route::post('/logout',  [AuthController::class, 'logout'])->name('logout');
 | Member Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('member')->name('member.')->group(function () {
+Route::prefix('member')->name('member.')->middleware('auth')->group(function () {
 
     // Katalog buku
     Route::get('/books',        [MemberBookController::class, 'index'])->name('books.index');
@@ -37,6 +37,7 @@ Route::prefix('member')->name('member.')->group(function () {
 
     // Peminjaman
     Route::get('/loans',            [MemberLoanController::class, 'index'])->name('loans.index');
+    Route::get('/loans/create',     [MemberLoanController::class, 'create'])->name('loans.create');
     Route::post('/loans',           [MemberLoanController::class, 'store'])->name('loans.store');
     Route::get('/loans/history',    [MemberLoanController::class, 'history'])->name('loans.history');
     Route::get('/loans/{id}',       [MemberLoanController::class, 'show'])->name('loans.show');
@@ -47,7 +48,7 @@ Route::prefix('member')->name('member.')->group(function () {
 | Admin Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -67,8 +68,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::delete('/categories/{id}',   [CategoryController::class, 'destroy'])->name('categories.destroy');
 
     // Peminjaman
-    Route::get('/loans',      [AdminLoanController::class, 'index'])->name('loans.index');
-    Route::get('/loans/{id}', [AdminLoanController::class, 'show'])->name('loans.show');
+    Route::get('/loans',           [AdminLoanController::class, 'index'])->name('loans.index');
+    Route::get('/loans/{id}',      [AdminLoanController::class, 'show'])->name('loans.show');
+    Route::post('/loans/{id}/approve', [AdminLoanController::class, 'approve'])->name('loans.approve');
+    Route::delete('/loans/{id}/reject', [AdminLoanController::class, 'reject'])->name('loans.reject');
 
     // Pengembalian
     Route::get('/returns',      [ReturnController::class, 'index'])->name('returns.index');

@@ -3,96 +3,99 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Peminjaman;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class LoanController extends Controller
 {
-    private function makeLoan(int $id, string $nama, string $email, string $judul, string $penulis, string $tglPinjam, string $tglKembali, int $dendaPerHari = 1000): \stdClass
-    {
-        $loan = new \stdClass();
-        $loan->id              = $id;
-        $loan->tanggal_pinjam  = $tglPinjam;
-        $loan->tanggal_kembali = $tglKembali;
-        $loan->status          = 'dipinjam';
-        $loan->denda           = 0;
-
-        $user = new \stdClass();
-        $user->nama  = $nama;
-        $user->email = $email;
-        $user->active_loans = 2;
-        $loan->user = $user;
-
-        $buku = new \stdClass();
-        $buku->judul   = $judul;
-        $buku->penulis = $penulis;
-
-        $det = new \stdClass();
-        $det->buku   = $buku;
-        $det->jumlah = 1;
-
-        $col = collect([$det]);
-        $loan->detail = new class($col) {
-            public function __construct(private $col) {}
-            public function first() { return $this->col->first(); }
-            public function getIterator() { return $this->col->getIterator(); }
-        };
-
-        return $loan;
-    }
-
-    private function allLoans(): \Illuminate\Support\Collection
-    {
-        return collect([
-            $this->makeLoan(1, 'John Doe',   'john@mail.com',  'Laskar Pelangi', 'Andrea Hirata',     '2026-06-10', '2026-06-24'),
-            $this->makeLoan(2, 'Jane Smith', 'jane@mail.com',  'Atomic Habits',  'James Clear',       '2026-06-01', '2026-06-15'),
-            $this->makeLoan(3, 'Budi S.',    'budi@mail.com',  'Bumi Manusia',   'Pramoedya A.T.',    '2026-06-05', '2026-06-26'),
-            $this->makeLoan(4, 'Ani R.',     'ani@mail.com',   'Deep Work',      'Cal Newport',       '2026-05-28', '2026-06-11'),
-            $this->makeLoan(5, 'Citra M.',   'citra@mail.com', 'Sapiens',        'Yuval Noah Harari', '2026-06-12', '2026-06-22'),
-        ]);
-    }
-
+    /**
+     * Display a listing of loans (pending and active)
+     */
     public function index(Request $request)
     {
-        $loans = $this->allLoans();
+        $query = Peminjaman::with(['user', 'detail.buku'])
+                          ->whereIn('status', ['pending', 'dipinjam']);
 
+        // Search filter
         if ($request->search) {
             $q = strtolower($request->search);
-            $loans = $loans->filter(fn($l) =>
-                str_contains(strtolower($l->user->nama), $q) ||
-                str_contains(strtolower($l->detail->first()->buku->judul), $q)
-            );
-        }
-
-        if ($request->status === 'terlambat') {
-            $loans = $loans->filter(fn($l) =>
-                \Carbon\Carbon::now()->diffInDays($l->tanggal_kembali, false) < 0
-            );
-        } elseif ($request->status === 'mendekati') {
-            $loans = $loans->filter(function($l) {
-                $d = \Carbon\Carbon::now()->diffInDays($l->tanggal_kembali, false);
-                return $d >= 0 && $d <= 3;
+            $query->whereHas('user', function($q_user) use ($q) {
+                $q_user->whereRaw("LOWER(name) LIKE ?", ["%{$q}%"])
+                       ->orWhereRaw("LOWER(email) LIKE ?", ["%{$q}%"]);
+            })->orWhereHas('detail.buku', function($q_buku) use ($q) {
+                $q_buku->whereRaw("LOWER(judul) LIKE ?", ["%{$q}%"]);
             });
-        } elseif ($request->status === 'aman') {
-            $loans = $loans->filter(fn($l) =>
-                \Carbon\Carbon::now()->diffInDays($l->tanggal_kembali, false) > 3
-            );
         }
 
-        $page = $request->get('page', 1);
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
-            $loans->values(), $loans->count(), 10, $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+        // Status filter
+        if ($request->status === 'pending') {
+            $query->where('status', 'pending');
+        } elseif ($request->status === 'active') {
+            $query->where('status', 'dipinjam');
+        } elseif ($request->status === 'terlambat') {
+            $query->where('status', 'dipinjam')
+                  ->whereDate('jatuh_tempo', '<', Carbon::now());
+        } elseif ($request->status === 'mendekati') {
+            $query->where('status', 'dipinjam')
+                  ->whereDate('jatuh_tempo', '>=', Carbon::now())
+                  ->whereDate('jatuh_tempo', '<=', Carbon::now()->addDays(3));
+        } elseif ($request->status === 'aman') {
+            $query->where('status', 'dipinjam')
+                  ->whereDate('jatuh_tempo', '>', Carbon::now()->addDays(3));
+        }
 
-        return view('admin.loans.index', ['loans' => $paginator]);
+        $loans = $query->orderBy('jatuh_tempo', 'asc')->paginate(10);
+
+        return view('admin.loans.index', ['loans' => $loans]);
     }
 
+    /**
+     * Display the specified loan
+     */
     public function show($id)
     {
-        $loan   = $this->allLoans()->firstWhere('id', (int) $id)
-                  ?? $this->allLoans()->first();
-        $isDone = false;
+        $loan = Peminjaman::with(['user', 'detail.buku'])->findOrFail($id);
+        $isDone = $loan->status === 'selesai';
 
         return view('admin.loans.show', compact('loan', 'isDone'));
+    }
+
+    /**
+     * Approve a pending loan
+     */
+    public function approve($id)
+    {
+        $loan = Peminjaman::findOrFail($id);
+
+        if ($loan->status !== 'pending') {
+            return back()->with('error', 'Peminjaman tidak bisa diapprove (status tidak sesuai)');
+        }
+
+        $loan->update([
+            'status' => 'dipinjam',
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+            'tanggal_pinjam' => Carbon::now(),
+            'jatuh_tempo' => Carbon::now()->addDays(7),
+        ]);
+
+        return back()->with('success', 'Peminjaman telah diapprove. Periode peminjaman: 7 hari');
+    }
+
+    /**
+     * Reject a pending loan
+     */
+    public function reject($id)
+    {
+        $loan = Peminjaman::findOrFail($id);
+
+        if ($loan->status !== 'pending') {
+            return back()->with('error', 'Peminjaman tidak bisa ditolak (status tidak sesuai)');
+        }
+
+        $loan->delete();
+
+        return back()->with('success', 'Permintaan peminjaman telah ditolak');
     }
 }
