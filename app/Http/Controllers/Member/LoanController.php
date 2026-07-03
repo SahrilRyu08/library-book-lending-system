@@ -31,7 +31,9 @@ class LoanController extends Controller
     public function index()
     {
         $aktifLoans = collect([
-            $this->makeLoan(1, 'Laskar Pelangi', '2026-06-10', '2026-06-24', 'dipinjam'),
+            // Status menunggu — belum dikonfirmasi admin
+            $this->makeLoan(1, 'Laskar Pelangi', '2026-06-25', '2026-07-09', 'menunggu'),
+            // Status dipinjam — sudah dikonfirmasi admin
             $this->makeLoan(2, 'Atomic Habits',  '2026-06-15', '2026-06-22', 'dipinjam'),
         ]);
 

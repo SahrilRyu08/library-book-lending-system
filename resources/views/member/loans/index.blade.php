@@ -47,7 +47,9 @@
                         @endif
                     </td>
                     <td>
-                        @if($isLate)
+                        @if($loan->status == 'menunggu')
+    <span class="badge-moco-late">Menunggu Konfirmasi Admin</span>
+                        @elseif($isLate)
                             <span class="badge-moco-late">Terlambat</span>
                         @elseif($isNear)
                             <span class="badge-moco-late">

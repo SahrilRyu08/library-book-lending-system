@@ -7,27 +7,31 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Tabel peminjaman — header transaksi peminjaman buku
+     * Satu peminjaman bisa punya banyak buku (lihat tabel peminjaman_detail)
      */
     public function up(): void
     {
         Schema::create('peminjaman', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("user_id")->constrained('users');
+            $table->foreignId('user_id')->constrained('users');
             $table->date('tanggal_pinjam');
             $table->date('jatuh_tempo');
             $table->date('tanggal_kembali')->nullable();
-            $table->decimal('denda', 10,2)->default(0);
-            $table->enum('status',['dipinjam','selesai','terlambat'])->default('dipinjam');
+            $table->decimal('denda', 10, 2)->default(0);
+
+            // menunggu = belum dikonfirmasi admin
+            // dipinjam = sudah dikonfirmasi, buku di tangan anggota
+            // selesai  = sudah dikembalikan tepat waktu
+            // terlambat = sudah dikembalikan tapi lewat jatuh tempo
+            $table->enum('status', ['menunggu', 'dipinjam', 'selesai', 'terlambat'])->default('menunggu');
+
             $table->timestamps();
             $table->index(['user_id', 'status']);
             $table->index(['jatuh_tempo']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('peminjaman');

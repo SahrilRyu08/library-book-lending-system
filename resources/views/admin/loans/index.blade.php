@@ -1,27 +1,91 @@
 @extends('layouts.admin')
-@section('title', 'Peminjaman Aktif')
+@section('title', 'Peminjaman')
 
 @section('content')
-<div class="moco-page-title">Peminjaman Aktif</div>
-<div class="moco-page-sub">Daftar buku yang sedang dipinjam oleh anggota</div>
+<div class="moco-page-title">Peminjaman</div>
+<div class="moco-page-sub">Konfirmasi permintaan pinjam dan pantau buku yang sedang dipinjam</div>
 
-<form method="GET" action="{{ route('admin.loans.index') }}" class="d-flex gap-2 mb-3">
-    <div class="input-group" style="max-width:300px;">
-        <span class="input-group-text bg-white" style="border-color:var(--moco-line);">
-            <i class="bi bi-search"></i>
-        </span>
-        <input type="text" name="search" value="{{ request('search') }}"
-               class="form-control moco-input" placeholder="Cari anggota / buku...">
-    </div>
-    <select name="status" class="form-select moco-input" style="max-width:180px;">
-        <option value="">Semua</option>
-        <option value="aman"     {{ request('status') == 'aman'     ? 'selected' : '' }}>Aman</option>
-        <option value="mendekati"{{ request('status') == 'mendekati' ? 'selected' : '' }}>H-3</option>
-        <option value="terlambat"{{ request('status') == 'terlambat' ? 'selected' : '' }}>Terlambat</option>
-    </select>
-    <button class="btn btn-moco-outline" type="submit">Filter</button>
-</form>
+{{-- Tab navigasi --}}
+<div class="d-flex gap-0 mb-4" style="border-bottom:2px solid var(--moco-line);">
+    <a href="{{ route('admin.loans.index', ['tab' => 'menunggu']) }}"
+       class="px-4 py-2 text-decoration-none fw-semibold"
+       style="font-size:14px;
+              border-bottom: 2px solid {{ $tab === 'menunggu' || !$tab ? 'var(--moco-blue)' : 'transparent' }};
+              color: {{ $tab === 'menunggu' || !$tab ? 'var(--moco-blue)' : 'var(--moco-text-soft)' }};
+              margin-bottom:-2px;">
+        Menunggu Konfirmasi
+        @if($jumlahMenunggu > 0)
+            <span class="badge-moco-late ms-1">{{ $jumlahMenunggu }}</span>
+        @endif
+    </a>
+    <a href="{{ route('admin.loans.index', ['tab' => 'aktif']) }}"
+       class="px-4 py-2 text-decoration-none fw-semibold"
+       style="font-size:14px;
+              border-bottom: 2px solid {{ $tab === 'aktif' ? 'var(--moco-blue)' : 'transparent' }};
+              color: {{ $tab === 'aktif' ? 'var(--moco-blue)' : 'var(--moco-text-soft)' }};
+              margin-bottom:-2px;">
+        Sedang Dipinjam
+    </a>
+</div>
 
+@if($tab === 'menunggu' || !$tab)
+{{-- ===== TAB: MENUNGGU KONFIRMASI ===== --}}
+<div class="moco-card p-0" style="overflow:hidden;">
+    <table class="table moco-table align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Anggota</th>
+                <th>Buku</th>
+                <th>Tgl Permintaan</th>
+                <th>Status</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($loans as $loan)
+                <tr>
+                    <td>
+                        <div style="font-weight:600;">{{ $loan->user->nama }}</div>
+                        <div class="moco-note">{{ $loan->user->email }}</div>
+                    </td>
+                    <td>{{ $loan->detail->first()->buku->judul }}</td>
+                    <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
+                    <td><span class="badge-moco-late">Menunggu Konfirmasi</span></td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            {{-- Tombol Konfirmasi --}}
+                            <form method="POST" action="{{ route('admin.loans.confirm', $loan->id) }}">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-moco"
+                                        onclick="return confirm('Konfirmasi peminjaman ini?')">
+                                    Konfirmasi
+                                </button>
+                            </form>
+                            {{-- Tombol Tolak --}}
+                            <form method="POST" action="{{ route('admin.loans.reject', $loan->id) }}">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-moco-outline"
+                                        style="color:var(--moco-text-faint);"
+                                        onclick="return confirm('Tolak permintaan ini?')">
+                                    Tolak
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="text-center moco-note py-5">
+                        Tidak ada permintaan peminjaman yang menunggu konfirmasi.
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
+
+@else
+{{-- ===== TAB: SEDANG DIPINJAM ===== --}}
 <div class="moco-card p-0" style="overflow:hidden;">
     <table class="table moco-table align-middle mb-0">
         <thead>
@@ -32,7 +96,7 @@
                 <th>Jatuh Tempo</th>
                 <th>Sisa Hari</th>
                 <th>Status</th>
-                <th>Detail</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -44,10 +108,10 @@
                 @endphp
                 <tr>
                     <td>
-                        <div style="font-weight:600;">{{ $loan->user->nama ?? '-' }}</div>
-                        <div class="moco-note">{{ $loan->user->email ?? '' }}</div>
+                        <div style="font-weight:600;">{{ $loan->user->nama }}</div>
+                        <div class="moco-note">{{ $loan->user->email }}</div>
                     </td>
-                    <td>{{ $loan->detail->first()->buku->judul ?? '-' }}</td>
+                    <td>{{ $loan->detail->first()->buku->judul }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_kembali)->format('d M Y') }}</td>
                     <td>
@@ -75,20 +139,21 @@
                     <td>
                         <a href="{{ route('admin.loans.show', $loan->id) }}"
                            class="btn btn-sm btn-moco-outline">
-                            <i class="bi bi-eye"></i> Lihat
+                            <i class="bi bi-eye"></i> Detail
                         </a>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center moco-note py-4">
-                        Tidak ada peminjaman aktif.
+                    <td colspan="7" class="text-center moco-note py-5">
+                        Tidak ada buku yang sedang dipinjam.
                     </td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 </div>
+@endif
 
 <div class="mt-3">{{ $loans->links() }}</div>
 @endsection
