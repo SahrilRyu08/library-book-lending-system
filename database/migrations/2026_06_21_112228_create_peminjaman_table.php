@@ -14,11 +14,18 @@ return new class extends Migration
         Schema::create('peminjaman', function (Blueprint $table) {
             $table->id();
             $table->foreignId("user_id")->constrained('users');
-            $table->date('tanggal_pinjam');
-            $table->date('jatuh_tempo');
+            $table->date('tanggal_pinjam')->nullable();
+            $table->date('jatuh_tempo')->nullable();
             $table->date('tanggal_kembali')->nullable();
+<<<<<<< HEAD
             $table->decimal('denda', 10,2)->default(0);
             $table->enum('status',['dipinjam','selesai','terlambat'])->default('dipinjam');
+=======
+            $table->unsignedInteger('denda')->default(0);
+            $table->enum('status',['pending','dipinjam','selesai'])->default('pending');
+            $table->timestamp('approved_at')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users');
+>>>>>>> enter/feature/loan-system
             $table->timestamps();
             $table->index(['user_id', 'status']);
             $table->index(['jatuh_tempo']);

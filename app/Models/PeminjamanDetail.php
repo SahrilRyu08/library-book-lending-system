@@ -2,36 +2,31 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PeminjamanDetail extends Model
 {
-    use HasFactory;
-
     protected $table = 'peminjaman_detail';
-
-    /**
-     * Kolom yang boleh diisi secara massal
-     */
+    
     protected $fillable = [
         'peminjaman_id',
         'buku_id',
-        'jumlah',
+        'jumlah'
     ];
 
     /**
-     * Relasi: detail belongs to satu peminjaman (header)
+     * Get the loan that owns this detail
      */
-    public function peminjaman()
+    public function peminjaman(): BelongsTo
     {
         return $this->belongsTo(Peminjaman::class);
     }
 
     /**
-     * Relasi: detail belongs to satu buku
+     * Get the book
      */
-    public function buku()
+    public function buku(): BelongsTo
     {
         return $this->belongsTo(Buku::class);
     }

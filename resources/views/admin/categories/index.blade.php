@@ -19,11 +19,11 @@
                     <i class="bi bi-folder2"></i>
                 </div>
                 <div class="flex-grow-1">
-                    <div style="font-weight:600;font-size:14px;">{{ $cat->nama_kategori }}</div>
-                    <div class="moco-note">{{ $cat->buku_count }} buku</div>
+                    <div style="font-weight:600;font-size:14px;">{{ $cat->nama }}</div>
+                    <div class="moco-note">{{ $cat->buku_count ?? 0 }} buku</div>
                 </div>
                 <button class="btn btn-sm btn-moco-outline me-1"
-                        onclick="editKategori({{ $cat->id }}, '{{ $cat->nama_kategori }}', '{{ $cat->deskripsi }}')">
+                        onclick="editKategori({{ $cat->id }}, '{{ $cat->nama }}', '{{ $cat->deskripsi }}')">
                     <i class="bi bi-pencil"></i>
                 </button>
                 <form method="POST" action="{{ route('admin.categories.destroy', $cat->id) }}"
@@ -54,12 +54,12 @@
         <tbody>
             @forelse($categories as $cat)
                 <tr>
-                    <td><strong>{{ $cat->nama_kategori }}</strong></td>
+                    <td><strong>{{ $cat->nama }}</strong></td>
                     <td>{{ $cat->deskripsi ?: '-' }}</td>
                     <td>{{ $cat->buku_count }}</td>
                     <td>
                         <button class="btn btn-sm btn-moco-outline me-1"
-                                onclick="editKategori({{ $cat->id }}, '{{ $cat->nama_kategori }}', '{{ $cat->deskripsi }}')">
+                                onclick="editKategori({{ $cat->id }}, '{{ $cat->nama }}', '{{ $cat->deskripsi }}')">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <form method="POST" action="{{ route('admin.categories.destroy', $cat->id) }}"
@@ -93,7 +93,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="moco-label">Nama Kategori</label>
-                        <input type="text" name="nama_kategori" class="form-control moco-input"
+                        <input type="text" name="nama" class="form-control moco-input"
                                placeholder="Nama kategori..." required>
                     </div>
                     <div class="mb-3">
@@ -124,7 +124,7 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="moco-label">Nama Kategori</label>
-                        <input type="text" name="nama_kategori" id="editNama"
+                        <input type="text" name="nama" id="editNama"
                                class="form-control moco-input" required>
                     </div>
                     <div class="mb-3">

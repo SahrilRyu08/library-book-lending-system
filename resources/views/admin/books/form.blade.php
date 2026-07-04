@@ -85,7 +85,7 @@
                         @foreach($categories as $cat)
                             <option value="{{ $cat->id }}"
                                 {{ old('kategori_id', $book->kategori_id ?? '') == $cat->id ? 'selected' : '' }}>
-                                {{ $cat->nama_kategori }}
+                                {{ $cat->nama }}
                             </option>
                         @endforeach
                     </select>

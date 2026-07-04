@@ -3,73 +3,136 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\Peminjaman;
+use App\Models\PeminjamanDetail;
+use App\Models\Buku;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class LoanController extends Controller
 {
-    private function makeLoan(int $id, string $judul, string $tglPinjam, string $tglKembali, string $status, int $denda = 0): \stdClass
-    {
-        $loan = new \stdClass();
-        $loan->id              = $id;
-        $loan->tanggal_pinjam  = $tglPinjam;
-        $loan->tanggal_kembali = $tglKembali;
-        $loan->status          = $status;
-        $loan->denda           = $denda;
-
-        $buku   = new \stdClass(); $buku->judul = $judul;
-        $det    = new \stdClass(); $det->buku   = $buku;
-        $col    = collect([$det]);
-        $loan->detail = new class($col) {
-            public function __construct(private $col) {}
-            public function first() { return $this->col->first(); }
-        };
-
-        return $loan;
-    }
-
-    // Peminjaman on-going
+    /**
+     * Display active loans for member
+     */
     public function index()
     {
-        $aktifLoans = collect([
-            $this->makeLoan(1, 'Laskar Pelangi', '2026-06-10', '2026-06-24', 'dipinjam'),
-            $this->makeLoan(2, 'Atomic Habits',  '2026-06-15', '2026-06-22', 'dipinjam'),
-        ]);
+        $user = auth()->user();
+        
+        // Count active loans
+        $aktivLoans = Peminjaman::where('user_id', $user->id)
+                            ->where('status', 'dipinjam')
+                            ->with('detail.buku')
+                            ->get();
 
         return view('member.loans.index', [
-            'aktifLoans' => $aktifLoans,
-            'aktif'      => $aktifLoans->count(),
+            'aktifLoans' => $aktivLoans,
+            'aktif'      => $aktivLoans->count(),
             'maxPinjam'  => 3,
         ]);
     }
 
-    // Riwayat yang sudah selesai
-    public function history()
+    /**
+     * Show form to create new loan
+     */
+    public function create()
     {
-        $history = collect([
-            $this->makeLoan(3, 'Bumi Manusia',   '2026-05-01', '2026-05-14', 'dikembalikan', 0),
-            $this->makeLoan(4, 'Filosofi Teras', '2026-04-20', '2026-04-30', 'dikembalikan', 5000),
-            $this->makeLoan(5, 'Deep Work',      '2026-03-10', '2026-03-20', 'dikembalikan', 0),
-        ]);
+        $user = auth()->user();
+        
+        // Check active loans
+        $aktifCount = Peminjaman::where('user_id', $user->id)
+                            ->where('status', 'dipinjam')
+                            ->count();
 
-        $page = request()->get('page', 1);
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
-            $history->forPage($page, 10), $history->count(), 10, $page,
-            ['path' => request()->url()]
-        );
+        if ($aktifCount >= 3) {
+            return back()->with('error', 'Anda sudah mencapai batas maksimal peminjaman (3 buku)');
+        }
 
-        return view('member.loans.history', [
-            'historyLoans' => $paginator,
-        ]);
+        // Get available books
+        $books = Buku::with('kategori')->get();
+
+        return view('member.loans.create', compact('books'));
     }
 
+    /**
+     * Store new loan request (status: pending)
+     */
     public function store(Request $request)
     {
-        return redirect()->route('member.loans.index')
-                         ->with('success', 'Buku berhasil dipinjam!');
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'buku_id' => 'required|exists:buku,id',
+            'jumlah' => 'required|integer|min:1'
+        ]);
+
+        // Check if user already has pending loan request for this book
+        $existingPending = Peminjaman::where('user_id', $user->id)
+                                    ->where('status', 'pending')
+                                    ->with('detail')
+                                    ->get()
+                                    ->pluck('detail.*.buku_id')
+                                    ->flatten()
+                                    ->contains($validated['buku_id']);
+
+        if ($existingPending) {
+            return back()->with('error', 'Anda sudah memiliki permintaan peminjaman untuk buku ini');
+        }
+
+        // Check active loans
+        $aktivCount = Peminjaman::where('user_id', $user->id)
+                            ->where('status', 'dipinjam')
+                            ->count();
+
+        if ($aktivCount >= 3) {
+            return back()->with('error', 'Anda sudah mencapai batas maksimal peminjaman (3 buku)');
+        }
+
+        // Create loan request with status pending (will be approved by admin)
+        $loan = Peminjaman::create([
+            'user_id' => $user->id,
+            'status' => 'pending',
+            'tanggal_pinjam' => null,
+            'jatuh_tempo' => null,
+        ]);
+
+        // Add book details
+        PeminjamanDetail::create([
+            'peminjaman_id' => $loan->id,
+            'buku_id' => $validated['buku_id'],
+            'jumlah' => $validated['jumlah']
+        ]);
+
+        return redirect()->route('member.loans.index')->with('success', 'Permintaan peminjaman telah dikirim. Tunggu approval dari admin.');
     }
 
+    /**
+     * Display loan history (completed loans)
+     */
+    public function history()
+    {
+        $user = auth()->user();
+        
+        $history = Peminjaman::where('user_id', $user->id)
+                            ->where('status', 'selesai')
+                            ->with('detail.buku')
+                            ->orderBy('tanggal_kembali', 'desc')
+                            ->paginate(10);
+
+        return view('member.loans.history', compact('history'));
+    }
+
+    /**
+     * Show loan details
+     */
     public function show($id)
     {
-        return redirect()->route('member.loans.index');
+        $loan = Peminjaman::with(['user', 'detail.buku'])->findOrFail($id);
+
+        // Check if user owns this loan
+        if ($loan->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized');
+        }
+
+        return view('member.loans.show', compact('loan'));
     }
 }

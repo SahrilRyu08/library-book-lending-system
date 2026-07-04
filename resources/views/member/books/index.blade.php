@@ -19,7 +19,7 @@
         <option value="">Semua Kategori</option>
         @foreach($categories as $cat)
             <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>
-                {{ $cat->nama_kategori }}
+                {{ $cat->nama }}
             </option>
         @endforeach
     </select>
@@ -44,7 +44,7 @@
             <div class="moco-book-author">{{ $book->penulis }}</div>
 
             <div class="moco-note mb-1" style="font-size:12px;">
-                {{ $book->kategori->nama_kategori ?? '-' }}
+                {{ $book->kategori->nama ?? '-' }}
             </div>
             <div class="mb-2">
                 @if($book->stok > 0)
