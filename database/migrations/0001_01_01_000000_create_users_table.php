@@ -17,11 +17,8 @@ return new class extends Migration
             $table->string('email', 100)->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-<<<<<<< HEAD
-            $table->enum('role',['admin','anggota'])->default('anggota');
-=======
+            $table->enum('role',['admin','member'])->default('member');
             $table->string('role')->default('member');
->>>>>>> enter/feature/loan-system
             $table->rememberToken();
             $table->timestamps();
         });

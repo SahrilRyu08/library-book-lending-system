@@ -2,15 +2,12 @@
 
 namespace Database\Seeders;
 
-<<<<<<< HEAD
-=======
 use App\Models\User;
 use App\Models\Kategori;
 use App\Models\Buku;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanDetail;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
->>>>>>> enter/feature/loan-system
 use Illuminate\Database\Seeder;
 use Carbon\Carbon;
 
@@ -22,11 +19,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-<<<<<<< HEAD
         $this->call([
             KategoriSeeder::class, // 1. Kategori dulu
             UserSeeder::class,     // 2. User (admin + anggota dummy)
-=======
         // Create admin user
         $admin = User::create([
             'name' => 'Admin Perpustakaan',
@@ -37,8 +32,8 @@ class DatabaseSeeder extends Seeder
 
         // Create member users
         $member1 = User::create([
-            'name' => 'John Doe',
-            'email' => 'john@example.com',
+            'name' => 'Member Perpustakaan',
+            'email' => 'member@moco.app',
             'password' => bcrypt('password'),
             'role' => 'member',
         ]);
@@ -155,7 +150,6 @@ class DatabaseSeeder extends Seeder
             'peminjaman_id' => $loan5->id,
             'buku_id' => $book1->id,
             'jumlah' => 1,
->>>>>>> enter/feature/loan-system
         ]);
 
         // 3. Buku dummy — dibuat setelah kategori ada agar FK tidak error
