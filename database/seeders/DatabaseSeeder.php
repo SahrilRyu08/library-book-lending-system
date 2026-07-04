@@ -32,8 +32,8 @@ class DatabaseSeeder extends Seeder
 
         // Create member users
         $member1 = User::create([
-            'name' => 'Member Perpustakaan',
-            'email' => 'member@moco.app',
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
             'password' => bcrypt('password'),
             'role' => 'member',
         ]);
