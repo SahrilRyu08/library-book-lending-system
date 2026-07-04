@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-class NotificationController extends Controller
+class MemberNotificationController extends Controller
 {
     /**
-     * Daftar notifikasi admin.
+     * Daftar notifikasi anggota (terbaru di urutan atas).
      */
     public function index(Request $request)
     {
@@ -18,13 +18,13 @@ class NotificationController extends Controller
             ->paginate(10);
 
         return view(
-            'admin.notifications.index',
+            'member.notifications.index',
             compact('notifications')
         );
     }
 
     /**
-     * Tandai notifikasi sebagai dibaca.
+     * Tandai satu notifikasi sebagai dibaca.
      */
     public function markRead(Request $request, string $id)
     {

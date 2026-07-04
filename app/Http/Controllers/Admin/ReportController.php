@@ -17,13 +17,13 @@ class ReportController extends Controller
 
         $query = Peminjaman::with([
             'user',
-            'details.buku',
+            'detail.buku',
         ]);
 
         if ($startDate && $endDate) {
             $query->whereBetween('tanggal_pinjam', [
                 $startDate,
-                $endDate
+                $endDate,
             ]);
         }
 
@@ -33,11 +33,17 @@ class ReportController extends Controller
             ->withQueryString();
 
         $totalTransaksi = (clone $query)->count();
+        $totalDenda     = (clone $query)->sum('denda');
 
-        $totalDenda = (clone $query)->sum('denda');
-
+        // Catatan: 'terlambat' di sini dihitung dari transaksi yang
+        // pernah telat (denda > 0), bukan status 'terlambat' saja,
+        // supaya konsisten dengan ReturnController yang selalu
+        // menutup transaksi dengan status 'selesai'.
         $jumlahTerlambat = (clone $query)
-            ->where('status', 'terlambat')
+            ->where(function ($q) {
+                $q->where('status', 'terlambat')
+                    ->orWhere('denda', '>', 0);
+            })
             ->count();
 
         $popularBooks = PeminjamanDetail::select(

@@ -1,7 +1,19 @@
 @extends('layouts.app')
 @section('title', 'Notifikasi')
 @section('content')
-    <h3>Notifikasi</h3>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Notifikasi</h3>
+
+        @if($notifications->where('read_at', null)->count() > 0)
+            <form action="{{ route('member.notifications.readAll') }}" method="POST">
+                @csrf
+                <button class="btn btn-sm btn-outline-primary">
+                    Tandai Semua Dibaca
+                </button>
+            </form>
+        @endif
+    </div>
+
     <div class="card">
         <div class="card-body">
             @forelse($notifications as $notification)
@@ -23,7 +35,7 @@
 
                     @if(!$notification->read_at)
                         <form
-                            action="{{ route('member.notifications.read',$notification->id) }}"
+                            action="{{ route('member.notifications.read', $notification->id) }}"
                             method="POST"
                             class="mt-2">
                             @csrf

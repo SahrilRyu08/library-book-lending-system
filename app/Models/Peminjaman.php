@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Peminjaman extends Model
 {
@@ -49,7 +50,7 @@ class Peminjaman extends Model
      * Relasi: satu peminjaman bisa punya banyak detail buku
      * Dipakai Dev 4 (loan system) dan Dev 5 (pengembalian)
      */
-    public function detail()
+    public function detail(): HasMany
     {
         return $this->hasMany(PeminjamanDetail::class);
     }

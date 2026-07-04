@@ -39,7 +39,7 @@
             @forelse($returns as $loan)
                 <tr>
                     <td>{{ $loan->user->nama ?? '-' }}</td>
-                    <td>{{ $loan->details->first()->buku->judul ?? '-' }}</td>
+                    <td>{{ $loan->detail->first()->buku->judul ?? '-' }}</td>
                     <td>{{ Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
                     <td>{{ Carbon::parse($loan->tanggal_kembali)->format('d M Y') }}</td>
                     <td>

@@ -4,36 +4,41 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
+use App\Notifications\KeterlambatanNotification;
+use App\Notifications\PengembalianNotification;
+use App\Services\LoanService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ReturnController extends Controller
 {
+    public function __construct(protected LoanService $loanService)
+    {
+    }
+
     /**
-     * Daftar peminjaman yang belum dikembalikan
+     * Daftar peminjaman yang belum dikembalikan (dipinjam / terlambat).
      */
     public function index(Request $request)
     {
         $query = Peminjaman::with([
             'user',
-            'details.buku',
+            'detail.buku',
         ])
             ->whereIn('status', ['dipinjam', 'terlambat']);
 
-        // Filter status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Cari nama anggota
         if ($request->filled('member')) {
             $query->whereHas('user', function ($q) use ($request) {
                 $q->where('nama', 'like', '%' . $request->member . '%');
             });
         }
 
-        // Cari judul buku
         if ($request->filled('book')) {
-            $query->whereHas('details.buku', function ($q) use ($request) {
+            $query->whereHas('detail.buku', function ($q) use ($request) {
                 $q->where('judul', 'like', '%' . $request->book . '%');
             });
         }
@@ -47,7 +52,7 @@ class ReturnController extends Controller
     }
 
     /**
-     * Proses pengembalian buku
+     * Proses pengembalian buku - sudah pakai LoanService (Branch 4).
      */
     public function store(Request $request)
     {
@@ -55,34 +60,38 @@ class ReturnController extends Controller
             'loan_id' => 'required|exists:peminjaman,id',
         ]);
 
-        $loan = Peminjaman::findOrFail($request->loan_id);
+        $loan = Peminjaman::with('details.buku', 'user')
+            ->findOrFail($request->loan_id);
 
-        // sementara (nanti dipindahkan ke LoanService)
-        $loan->tanggal_kembali = now();
-
-        if ($loan->jatuh_tempo && now()->gt($loan->jatuh_tempo)) {
-
-            $hari = now()->diffInDays($loan->jatuh_tempo);
-
-            $loan->status = 'terlambat';
-
-            // contoh denda Rp1.000/hari
-            $loan->denda = $hari * 1000;
-
-        } else {
-
-            $loan->status = 'selesai';
-
-            $loan->denda = 0;
+        if ($loan->tanggal_kembali !== null || $loan->status === 'selesai') {
+            return back()->with(
+                'error',
+                'Peminjaman ini sudah pernah dikembalikan.'
+            );
         }
 
-        $loan->save();
+        $isTerlambat = false;
 
-        // kembalikan stok buku
-        foreach ($loan->details as $detail) {
+        DB::transaction(function () use ($loan, &$isTerlambat) {
+            $loan->tanggal_kembali = now();
 
-            $detail->buku->increment('stok');
+            // Hitung denda pakai LoanService (bukan manual lagi)
+            $denda = $this->loanService->hitungDenda($loan);
+            $isTerlambat = $denda > 0;
 
+            $loan->denda  = $denda;
+            $loan->status = 'selesai';
+            $loan->save();
+
+            foreach ($loan->details as $detail) {
+                $detail->buku->increment('stok');
+            }
+        });
+
+        // Kirim notifikasi
+        $loan->user->notify(new PengembalianNotification($loan));
+        if ($isTerlambat) {
+            $loan->user->notify(new KeterlambatanNotification($loan));
         }
 
         return redirect()

@@ -103,7 +103,7 @@
                         {{ $loan->user?->nama ?? '-' }}
                     </td>
                     <td>
-                        {{ $loan->details->first()?->buku?->judul ?? '-' }}
+                        {{ $loan->detail->first()?->buku?->judul ?? '-' }}
                     </td>
                     <td>
                         {{ optional($loan->tanggal_pinjam)->format('d M Y') }}

@@ -208,7 +208,6 @@ Dibuat **Branch 1**.
 | GET | `/admin/returns` | `Admin\ReturnController@index` | daftar peminjaman belum kembali (`dipinjam`/`terlambat`) |
 | POST | `/admin/returns` | `@store` | set `tanggal_kembali`, hitung `denda` via `LoanService`, set status `selesai`/`terlambat`; stok pulih otomatis |
 | GET | `/admin/reports` | `Admin\ReportController@index` | rekap: total peminjaman, **buku terpopuler** (agregasi peminjaman_detail), total denda, jumlah terlambat + filter tanggal |
-| 🔵 GET | `/admin/reports/export` | `@export` | export CSV/PDF (opsional) |
 | GET | `/admin/dashboard` | `Admin\DashboardController@index` | kartu statistik query nyata (buku, anggota, peminjaman aktif, terlambat) |
 | 🔵 GET | `/member/notifications` | `Member\NotificationController@index` | daftar notifikasi anggota |
 | 🔵 POST | `/member/notifications/{id}/read` | `@markRead` | tandai `read_at` |

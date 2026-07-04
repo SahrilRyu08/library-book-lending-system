@@ -336,7 +336,7 @@
                 item.addEventListener('click', function (e) {
                     e.preventDefault();
                     const url = this.dataset.url;
-                    const action = this.dataset.read;\
+                    const action = this.dataset.read;
                     fetch(action, {
                         method: 'POST',
                         headers: {
