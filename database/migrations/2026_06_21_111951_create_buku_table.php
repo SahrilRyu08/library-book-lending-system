@@ -14,17 +14,14 @@ return new class extends Migration
         Schema::create('buku', function (Blueprint $table) {
             $table->id();
             $table->foreignId('kategori_id')->constrained('kategori');
-
             $table->string('judul', 75);
             $table->string('penulis', 50);
             $table->string('penerbit', 100);
             $table->year('tahun_terbit');
             $table->string('isbn', 20)->unique();
-
             $table->text('deskripsi')->nullable();
-            $table->string('cover')->nullable();
-
             $table->unsignedBigInteger('stok')->default(0);
+            $table->string('cover')->nullable();
             $table->timestamps();
         });
     }
@@ -37,4 +34,3 @@ return new class extends Migration
         Schema::dropIfExists('buku');
     }
 };
-

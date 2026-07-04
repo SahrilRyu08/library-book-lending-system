@@ -27,7 +27,7 @@
 
         <div class="d-flex gap-2 mb-3 flex-wrap">
             <span class="badge bg-light text-dark border" style="font-size:12px;">ISBN {{ $book->isbn }}</span>
-            <span class="badge bg-light text-dark border" style="font-size:12px;">{{ $book->kategori->nama ?? '-' }}</span>
+            <span class="badge bg-light text-dark border" style="font-size:12px;">{{ $book->kategori->nama_kategori ?? '-' }}</span>
             @if((int)$book->stok > 0)
                 <span class="badge-moco-stock">
                     Stok: {{ (int)$book->stok }}

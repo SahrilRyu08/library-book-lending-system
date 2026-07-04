@@ -4,78 +4,98 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
+use App\Notifications\KeterlambatanNotification;
+use App\Notifications\PengembalianNotification;
+use App\Services\LoanService;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ReturnController extends Controller
 {
+    public function __construct(protected LoanService $loanService)
+    {
+    }
+
     /**
-     * Display a listing of returns
+     * Daftar peminjaman yang belum dikembalikan (dipinjam / terlambat).
      */
     public function index(Request $request)
     {
-        $query = Peminjaman::with(['user', 'detail.buku'])
-            ->where('status', 'selesai');
+        $query = Peminjaman::with([
+            'user',
+            'detail.buku',
+        ])
+            ->whereIn('status', ['dipinjam', 'terlambat']);
 
-        if ($request->search) {
-            $q = strtolower($request->search);
-            $query->where(function ($qq) use ($q) {
-                $qq->whereHas('user', function ($q_user) use ($q) {
-                    $q_user->whereRaw("LOWER(name) LIKE ?", ["%{$q}%"]);
-                })
-                ->orWhereHas('detail.buku', function ($q_buku) use ($q) {
-                    $q_buku->whereRaw("LOWER(judul) LIKE ?", ["%{$q}%"]);
-                });
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('member')) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('nama', 'like', '%' . $request->member . '%');
             });
         }
 
-        if ($request->status === 'terlambat') {
-            $query->where('denda', '>', 0);
-        } elseif ($request->status === 'tepat') {
-            $query->where('denda', 0);
+        if ($request->filled('book')) {
+            $query->whereHas('detail.buku', function ($q) use ($request) {
+                $q->where('judul', 'like', '%' . $request->book . '%');
+            });
         }
 
-        $returns = $query->orderBy('tanggal_kembali', 'desc')->paginate(10);
+        $returns = $query
+            ->latest('tanggal_pinjam')
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('admin.returns.index', ['returns' => $returns]);
+        return view('admin.returns.index', compact('returns'));
     }
 
     /**
-     * Process return of a loan
+     * Proses pengembalian buku - sudah pakai LoanService (Branch 4).
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'peminjaman_id' => 'required|exists:peminjaman,id',
-            'tanggal_kembali' => 'required|date',
+        $request->validate([
+            'loan_id' => 'required|exists:peminjaman,id',
         ]);
 
-        $loan = Peminjaman::findOrFail($validated['peminjaman_id']);
+        $loan = Peminjaman::with('details.buku', 'user')
+            ->findOrFail($request->loan_id);
 
-        if ($loan->status !== 'dipinjam') {
-            return back()->with('error', 'Hanya peminjaman aktif yang bisa dikembalikan');
+        if ($loan->tanggal_kembali !== null || $loan->status === 'selesai') {
+            return back()->with(
+                'error',
+                'Peminjaman ini sudah pernah dikembalikan.'
+            );
         }
 
-        $returnDate = Carbon::parse($validated['tanggal_kembali']);
-        $dueDate = Carbon::parse($loan->jatuh_tempo);
+        $isTerlambat = false;
 
-        $denda = 0;
-        if ($returnDate->gt($dueDate)) {
-            $daysLate = $returnDate->diffInDays($dueDate);
-            $denda = $daysLate * 500;
+        DB::transaction(function () use ($loan, &$isTerlambat) {
+            $loan->tanggal_kembali = now();
+
+            // Hitung denda pakai LoanService (bukan manual lagi)
+            $denda = $this->loanService->hitungDenda($loan);
+            $isTerlambat = $denda > 0;
+
+            $loan->denda  = $denda;
+            $loan->status = 'selesai';
+            $loan->save();
+
+            foreach ($loan->details as $detail) {
+                $detail->buku->increment('stok');
+            }
+        });
+
+        // Kirim notifikasi
+        $loan->user->notify(new PengembalianNotification($loan));
+        if ($isTerlambat) {
+            $loan->user->notify(new KeterlambatanNotification($loan));
         }
 
-        $loan->update([
-            'status' => 'selesai',
-            'tanggal_kembali' => $returnDate,
-            'denda' => $denda,
-        ]);
-
-        if ($denda > 0) {
-            return back()->with('success', 'Pengembalian dicatat. Denda: Rp ' . number_format($denda, 0, ',', '.'));
-        }
-
-        return back()->with('success', 'Pengembalian dicatat tanpa denda');
+        return redirect()
+            ->route('admin.returns.index')
+            ->with('success', 'Pengembalian berhasil diproses.');
     }
 }
-

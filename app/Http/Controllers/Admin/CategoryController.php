@@ -3,50 +3,85 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Kategori;
 use Illuminate\Http\Request;
+use App\Models\Kategori;
 
+/**
+ * Admin CategoryController - DUMMY untuk preview UI
+ */
 class CategoryController extends Controller
 {
+    private function dummyCategories(): \Illuminate\Support\Collection
+    {
+        $data = [
+            [1, 'Fiksi',             'Novel, cerpen, dan karya fiksi lainnya', 12],
+            [2, 'Non-Fiksi',         'Buku berbasis fakta dan referensi',       8],
+            [3, 'Pengembangan Diri', 'Self-help dan produktivitas',             5],
+        ];
+
+        return collect($data)->map(function ($d) {
+            $c = new \stdClass();
+            $c->id           = $d[0];
+            $c->nama_kategori = $d[1];
+            $c->deskripsi    = $d[2];
+            $c->buku_count   = $d[3];
+            return $c;
+        });
+    }
+
     public function index()
     {
-        $categories = Kategori::withCount('buku')->get();
-        return view('admin.categories.index', ['categories' => $categories]);
+        $categories = Kategori::withCount('buku')
+                        ->orderBy('nama_kategori')
+                        ->get();
+
+        return view('admin.categories.index', compact('categories'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama' => 'required|unique:kategori',
-            'deskripsi' => 'nullable',
+            'nama_kategori' => 'required|max:30|unique:kategori,nama_kategori',
+            'deskripsi'     => 'nullable',
         ]);
 
-        Kategori::create($validated);
+        kategori::create($validated);
 
-        return redirect()->route('admin.categories.index')
-                         ->with('success', 'Kategori berhasil ditambahkan!');
+        return redirect()
+            ->route('admin.categories.index')
+            ->with('success', 'Kategori berhasil ditambahkan.');
     }
 
     public function update(Request $request, $id)
     {
-        $kategori = Kategori::findOrFail($id);
-        
+        $category = kategori::findOrFail($id);
+
         $validated = $request->validate([
-            'nama' => 'required|unique:kategori,nama,' . $kategori->id,
-            'deskripsi' => 'nullable',
+            'nama_kategori' => 'required|max:30|unique:kategori,nama_kategori,' . $category->id,
+            'deskripsi'     => 'nullable',
         ]);
 
-        $kategori->update($validated);
+        $category->update($validated);
 
-        return redirect()->route('admin.categories.index')
-                         ->with('success', 'Kategori berhasil diperbarui!');
+        return redirect()
+            ->route('admin.categories.index')
+            ->with('success', 'Kategori berhasil diperbarui.');
     }
 
     public function destroy($id)
     {
-        Kategori::findOrFail($id)->delete();
+        $category = kategori::findOrFail($id);
 
-        return redirect()->route('admin.categories.index')
-                         ->with('success', 'Kategori berhasil dihapus!');
+        if ($category->buku()->count() > 0) {
+            return redirect()
+                ->route('admin.categories.index')
+                ->with('error', 'Kategori tidak dapat dihapus karena masih digunakan oleh buku.');
+        }
+
+        $category->delete();
+
+        return redirect()
+            ->route('admin.categories.index')
+            ->with('success', 'Kategori berhasil dihapus.');
     }
 }

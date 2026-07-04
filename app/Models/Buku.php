@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Buku extends Model
 {
+    use HasFactory;
+
     protected $table = 'buku';
 
     protected $fillable = [
@@ -24,30 +25,19 @@ class Buku extends Model
 
     protected $appends = ['tersedia'];
 
-    /**
-     * Get the category
-     */
-    public function kategori(): BelongsTo
+    public function kategori()
     {
         return $this->belongsTo(Kategori::class);
     }
 
-    /**
-     * Get all loan details for this book
-     */
-    public function peminjamanDetail(): HasMany
+    public function detailPeminjaman()
     {
         return $this->hasMany(PeminjamanDetail::class);
     }
 
-    public function detailPeminjaman(): HasMany
-    {
-        return $this->peminjamanDetail();
-    }
-
     public function getTersediaAttribute(): int
     {
-        $dipinjam = $this->peminjamanDetail()
+        $dipinjam = $this->detailPeminjaman()
             ->whereHas('peminjaman', function ($query) {
                 $query->where('status', 'dipinjam');
             })
@@ -56,4 +46,3 @@ class Buku extends Model
         return max(0, $this->stok - $dipinjam);
     }
 }
-

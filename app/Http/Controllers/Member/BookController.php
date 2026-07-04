@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
-use App\Models\Buku;
 use Illuminate\Http\Request;
 
+/**
+ * Member BookController - DUMMY untuk preview UI
+ * Semua data pakai objek stdClass palsu, tidak sentuh database.
+ */
 class BookController extends Controller
 {
+    // Helper: buat objek buku dummy
     private function dummyBooks(): array
     {
         $raw = [
@@ -33,7 +37,7 @@ class BookController extends Controller
             $b->penerbit    = 'Gramedia';
             $b->tahun_terbit = 2020 + $d[0];
             $kat = new \stdClass();
-            $kat->nama = $d[3];
+            $kat->nama_kategori = $d[3];
             $b->kategori = $kat;
             return $b;
         }, $raw);
@@ -44,33 +48,36 @@ class BookController extends Controller
         return array_map(function ($name) {
             $c = new \stdClass();
             $c->id = rand(1, 99);
-            $c->nama = $name;
+            $c->nama_kategori = $name;
             return $c;
         }, ['Fiksi', 'Non-Fiksi', 'Pengembangan Diri']);
     }
 
+    // ── Katalog ──────────────────────────────────────────
     public function index(Request $request)
-    {
-        $query = Buku::with('kategori');
-
-        if ($request->search) {
-            $q = strtolower($request->search);
-            $query->whereRaw("LOWER(judul) LIKE ?", ["%{$q}%"])
-                  ->orWhereRaw("LOWER(penulis) LIKE ?", ["%{$q}%"]);
-        }
-
-        $books = $query->paginate(8);
-        
-        return view('member.books.index', ['books' => $books]);
-    }
-
-    // Fallback dummy for preview
-    private function _dummyBooks()
     {
         $books = collect($this->dummyBooks());
 
+        // Filter sederhana untuk preview
+        if ($request->search) {
+            $q = strtolower($request->search);
+            $books = $books->filter(fn($b) =>
+                str_contains(strtolower($b->judul), $q) ||
+                str_contains(strtolower($b->penulis), $q)
+            );
+        }
+
+        // Simulasi paginator sederhana (pakai LengthAwarePaginator)
+        $page     = $request->get('page', 1);
+        $perPage  = 8;
+        $items    = $books->slice(($page - 1) * $perPage, $perPage)->values();
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items, $books->count(), $perPage, $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
         return view('member.books.index', [
-            'books'      => $books,
+            'books'      => $paginator,
             'categories' => $this->dummyCategories(),
         ]);
     }

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -41,27 +40,10 @@ class User extends Authenticatable
     }
 
     /**
-     * Get all loans for this user
+     * Relasi: satu user bisa memiliki banyak peminjaman
      */
-    public function peminjaman(): HasMany
+    public function peminjaman()
     {
         return $this->hasMany(Peminjaman::class);
     }
-
-    /**
-     * Get all approvals made by this admin
-     */
-    public function approvals(): HasMany
-    {
-        return $this->hasMany(Peminjaman::class, 'approved_by');
-    }
-
-    /**
-     * Check if user is admin
-     */
-    public function isAdmin(): bool
-    {
-        return $this->role === 'admin' || $this->email === 'admin@library.com';
-    }
 }
-
