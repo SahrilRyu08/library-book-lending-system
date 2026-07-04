@@ -9,25 +9,25 @@
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="moco-stat-card">
-            <div class="stat-num">{{ $totalBuku }}</div>
+            <div class="stat-num">{{ $bookCount }}</div>
             <div class="stat-lbl">Total Buku</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="moco-stat-card">
-            <div class="stat-num">{{ $sedangDipinjam }}</div>
+            <div class="stat-num">{{ $activeLoan }}</div>
             <div class="stat-lbl">Sedang Dipinjam</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="moco-stat-card">
-            <div class="stat-num" style="color:var(--moco-warn);">{{ $terlambat }}</div>
+            <div class="stat-num" style="color:var(--moco-warn);">{{ $lateLoan }}</div>
             <div class="stat-lbl">Terlambat</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="moco-stat-card">
-            <div class="stat-num">{{ $totalAnggota }}</div>
+            <div class="stat-num">{{ $memberCount }}</div>
             <div class="stat-lbl">Anggota</div>
         </div>
     </div>

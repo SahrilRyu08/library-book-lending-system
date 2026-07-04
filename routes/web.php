@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Member\MemberNotificationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Member\BookController as MemberBookController;
@@ -32,6 +34,9 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:anggota'])->
     Route::post('/loans',            [MemberLoanController::class, 'store'])->name('loans.store');
     Route::get('/loans/history',     [MemberLoanController::class, 'history'])->name('loans.history');
     Route::get('/loans/{id}',        [MemberLoanController::class, 'show'])->name('loans.show')->where('id', '[0-9]+');
+    Route::get('/notifications',            [MemberNotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [MemberNotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all',  [MemberNotificationController::class, 'markAllRead'])->name('notifications.readAll');
 });
 
 // Admin Routes — tambah middleware auth + role
@@ -54,4 +59,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/returns',           [ReturnController::class, 'index'])->name('returns.index');
     Route::post('/returns',          [ReturnController::class, 'store'])->name('returns.store');
     Route::get('/reports',           [ReportController::class, 'index'])->name('reports.index');
+    Route::post('/returns',          [ReturnController::class, 'store'])->name('returns.store');
+    Route::get('/reports',           [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/notifications',            [AdminNotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [AdminNotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all',  [AdminNotificationController::class, 'markAllRead'])->name('notifications.readAll');
 });
