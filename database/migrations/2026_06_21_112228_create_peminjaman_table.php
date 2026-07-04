@@ -13,13 +13,20 @@ return new class extends Migration
     {
         Schema::create('peminjaman', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("user_id")->constrained('users');
-            $table->date('tanggal_pinjam');
-            $table->date('jatuh_tempo');
+            $table->foreignId('user_id')->constrained('users');
+
+            $table->date('tanggal_pinjam')->nullable();
+            $table->date('jatuh_tempo')->nullable();
             $table->date('tanggal_kembali')->nullable();
+
+            // Loan approval workflow
+            $table->enum('status', ['pending', 'dipinjam', 'selesai'])->default('pending');
             $table->unsignedInteger('denda')->default(0);
-            $table->enum('status',['dipinjam','selesai','terlambat'])->default('dipinjam');
+            $table->timestamp('approved_at')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users');
+
             $table->timestamps();
+
             $table->index(['user_id', 'status']);
             $table->index(['jatuh_tempo']);
         });
@@ -33,3 +40,4 @@ return new class extends Migration
         Schema::dropIfExists('peminjaman');
     }
 };
+
