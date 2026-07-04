@@ -8,6 +8,10 @@ use App\Models\PeminjamanDetail;
 use App\Models\Buku;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use App\Http\Requests\StoreLoanRequest;
+use App\Services\LoanService;
+
 
 class LoanController extends Controller
 {
@@ -39,65 +43,99 @@ class LoanController extends Controller
 
         $aktifCount = Peminjaman::where('user_id', $user->id)
             ->where('status', 'dipinjam')
-            ->count();
+            ->sum('peminjaman_detail.jumlah');
 
-        if ($aktifCount >= 3) {
-            return back()->with('error', 'Anda sudah mencapai batas maksimal peminjaman (3 buku)');
+        // Fallback if relation data isn't ready
+        if ($aktifCount === 0) {
+            $aktifCount = Peminjaman::where('user_id', $user->id)
+                ->where('status', 'dipinjam')
+                ->with('detail')
+                ->get()
+                ->reduce(fn ($carry, $loan) => $carry + $loan->detail->sum('jumlah'), 0);
         }
+
+        if ($aktifCount >= (int) config('library.max_buku_per_pinjam', 3)) {
+            return back()->with('error', 'Anda sudah mencapai batas maksimal peminjaman');
+        }
+
+
 
         $books = Buku::with('kategori')->get();
 
         return view('member.loans.create', compact('books'));
+
     }
+
 
     /**
      * Store new loan request (status: pending)
      */
-    public function store(Request $request)
+    public function store(StoreLoanRequest $request)
     {
         $user = auth()->user();
 
-        $validated = $request->validate([
-            'buku_id' => 'required|exists:buku,id',
-            'jumlah' => 'required|integer|min:1',
-        ]);
+        // cartItems already validated in request
+        $cartItems = $request->validatedForStore()['cartItems'] ?? [];
 
-        $existingPending = Peminjaman::where('user_id', $user->id)
+        if (empty($cartItems)) {
+            return back()->with('error', 'Keranjang peminjaman masih kosong.');
+        }
+
+        // Prevent duplicates: pending loan for same buku_id
+        $pendingBukuIds = Peminjaman::query()
+            ->where('user_id', $user->id)
             ->where('status', 'pending')
             ->with('detail')
             ->get()
             ->pluck('detail.*.buku_id')
             ->flatten()
-            ->contains($validated['buku_id']);
+            ->unique();
 
-        if ($existingPending) {
-            return back()->with('error', 'Anda sudah memiliki permintaan peminjaman untuk buku ini');
+        foreach ($cartItems as $item) {
+            $bukuId = (int) ($item['buku_id'] ?? 0);
+            if ($bukuId && $pendingBukuIds->contains($bukuId)) {
+                return back()->with('error', 'Anda sudah memiliki permintaan peminjaman untuk salah satu buku di keranjang Anda.');
+            }
         }
 
-        $aktivCount = Peminjaman::where('user_id', $user->id)
-            ->where('status', 'dipinjam')
-            ->count();
+        DB::transaction(function () use ($user, $cartItems, &$loan) {
+            $loan = Peminjaman::create([
+                'user_id' => $user->id,
+                'status' => 'pending',
+                'tanggal_pinjam' => null,
+                'jatuh_tempo' => null,
+            ]);
 
-        if ($aktivCount >= 3) {
-            return back()->with('error', 'Anda sudah mencapai batas maksimal peminjaman (3 buku)');
-        }
+            foreach ($cartItems as $item) {
+                $jumlah = (int) $item['jumlah'];
+                $bukuId = (int) $item['buku_id'];
 
-        $loan = Peminjaman::create([
-            'user_id' => $user->id,
-            'status' => 'pending',
-            'tanggal_pinjam' => null,
-            'jatuh_tempo' => null,
-        ]);
+                // Reduce stock safely (pre-check via request validation; this is a second line of defense)
+                $affected = Buku::query()
+                    ->where('id', $bukuId)
+                    ->where('stok', '>=', $jumlah)
+                    ->decrement('stok', $jumlah);
 
-        PeminjamanDetail::create([
-            'peminjaman_id' => $loan->id,
-            'buku_id' => $validated['buku_id'],
-            'jumlah' => $validated['jumlah'],
-        ]);
+                if ($affected !== 1) {
+                    throw new \RuntimeException('Stok buku tidak mencukupi untuk transaksi.');
+                }
+
+                PeminjamanDetail::create([
+                    'peminjaman_id' => $loan->id,
+                    'buku_id' => $bukuId,
+                    'jumlah' => $jumlah,
+                ]);
+            }
+        });
+
+
+        // Clear cart after successful transaction
+        $request->session()->forget('cart');
 
         return redirect()->route('member.loans.index')
             ->with('success', 'Permintaan peminjaman telah dikirim. Tunggu approval dari admin.');
     }
+
 
     /**
      * Display loan history (completed loans)
