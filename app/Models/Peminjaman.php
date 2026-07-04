@@ -2,20 +2,6 @@
 
 namespace App\Models;
 
-<<<<<<< HEAD
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class Peminjaman extends Model
-{
-    use HasFactory;
-
-    protected $table = 'peminjaman';
-
-    /**
-     * Kolom yang boleh diisi secara massal
-     */
-=======
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,41 +10,16 @@ use Carbon\Carbon;
 class Peminjaman extends Model
 {
     protected $table = 'peminjaman';
-    
->>>>>>> enter/feature/loan-system
+
     protected $fillable = [
         'user_id',
         'tanggal_pinjam',
         'jatuh_tempo',
         'tanggal_kembali',
-<<<<<<< HEAD
         'status',
         'denda',
-    ];
-
-    /**
-     * Cast tipe data kolom secara otomatis
-     * Tanggal di-cast ke Carbon agar bisa pakai ->diffInDays() dll
-     */
-    protected function casts(): array
-    {
-        return [
-            'tanggal_pinjam'  => 'date',
-            'jatuh_tempo'     => 'date',
-            'tanggal_kembali' => 'date',
-            'denda'           => 'decimal:2',
-        ];
-    }
-
-    /**
-     * Relasi: peminjaman belongs to satu user (anggota)
-     */
-    public function user()
-=======
-        'denda',
-        'status',
         'approved_at',
-        'approved_by'
+        'approved_by',
     ];
 
     protected $casts = [
@@ -66,26 +27,18 @@ class Peminjaman extends Model
         'jatuh_tempo' => 'date',
         'tanggal_kembali' => 'date',
         'approved_at' => 'datetime',
+        'denda' => 'decimal:2',
     ];
 
     /**
      * Get the user that owns the loan
      */
     public function user(): BelongsTo
->>>>>>> enter/feature/loan-system
     {
         return $this->belongsTo(User::class);
     }
 
     /**
-<<<<<<< HEAD
-     * Relasi: satu peminjaman bisa punya banyak detail buku
-     * Dipakai Dev 4 (loan system) dan Dev 5 (pengembalian)
-     */
-    public function detail()
-    {
-        return $this->hasMany(PeminjamanDetail::class);
-=======
      * Get the loan details
      */
     public function detail(): HasMany
@@ -94,11 +47,11 @@ class Peminjaman extends Model
     }
 
     /**
-     * Calculate denda based on tanggal_kembali
+     * Calculate fine based on tanggal_kembali
      */
     public function calculateDenda(): int
     {
-        if ($this->status !== 'selesai' || !$this->tanggal_kembali) {
+        if ($this->status !== 'selesai' || !$this->tanggal_kembali || !$this->jatuh_tempo) {
             return 0;
         }
 
@@ -110,7 +63,7 @@ class Peminjaman extends Model
         }
 
         $hariTerlambat = $kembaliDate->diffInDays($tempoDate);
-        return $hariTerlambat * 500; // Rp 500 per hari
+        return $hariTerlambat * 500;
     }
 
     /**
@@ -120,7 +73,7 @@ class Peminjaman extends Model
     {
         $now = Carbon::now();
         $tempo = Carbon::parse($this->jatuh_tempo);
-        return (int)$now->diffInDays($tempo, false);
+        return (int) $now->diffInDays($tempo, false);
     }
 
     /**
@@ -140,37 +93,25 @@ class Peminjaman extends Model
         return $daysLeft >= 0 && $daysLeft <= 3;
     }
 
-    /**
-     * Scope: Filter pending approvals
-     */
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
     }
 
-    /**
-     * Scope: Filter active loans
-     */
     public function scopeActive($query)
     {
         return $query->where('status', 'dipinjam');
     }
 
-    /**
-     * Scope: Filter overdue loans
-     */
     public function scopeOverdue($query)
     {
         return $query->where('status', 'dipinjam')
-                     ->whereDate('jatuh_tempo', '<', Carbon::now());
+            ->whereDate('jatuh_tempo', '<', Carbon::now());
     }
 
-    /**
-     * Scope: Filter completed loans
-     */
     public function scopeCompleted($query)
     {
         return $query->where('status', 'selesai');
->>>>>>> enter/feature/loan-system
     }
 }
+

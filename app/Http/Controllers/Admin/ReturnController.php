@@ -15,19 +15,20 @@ class ReturnController extends Controller
     public function index(Request $request)
     {
         $query = Peminjaman::with(['user', 'detail.buku'])
-                        ->where('status', 'selesai');
+            ->where('status', 'selesai');
 
-        // Search filter
         if ($request->search) {
             $q = strtolower($request->search);
-            $query->whereHas('user', function($q_user) use ($q) {
-                $q_user->whereRaw("LOWER(name) LIKE ?", ["%{$q}%"]);
-            })->orWhereHas('detail.buku', function($q_buku) use ($q) {
-                $q_buku->whereRaw("LOWER(judul) LIKE ?", ["%{$q}%"]);
+            $query->where(function ($qq) use ($q) {
+                $qq->whereHas('user', function ($q_user) use ($q) {
+                    $q_user->whereRaw("LOWER(name) LIKE ?", ["%{$q}%"]);
+                })
+                ->orWhereHas('detail.buku', function ($q_buku) use ($q) {
+                    $q_buku->whereRaw("LOWER(judul) LIKE ?", ["%{$q}%"]);
+                });
             });
         }
 
-        // Status filter
         if ($request->status === 'terlambat') {
             $query->where('denda', '>', 0);
         } elseif ($request->status === 'tepat') {
@@ -46,7 +47,7 @@ class ReturnController extends Controller
     {
         $validated = $request->validate([
             'peminjaman_id' => 'required|exists:peminjaman,id',
-            'tanggal_kembali' => 'required|date'
+            'tanggal_kembali' => 'required|date',
         ]);
 
         $loan = Peminjaman::findOrFail($validated['peminjaman_id']);
@@ -57,8 +58,7 @@ class ReturnController extends Controller
 
         $returnDate = Carbon::parse($validated['tanggal_kembali']);
         $dueDate = Carbon::parse($loan->jatuh_tempo);
-        
-        // Calculate fine: Rp 500 per day
+
         $denda = 0;
         if ($returnDate->gt($dueDate)) {
             $daysLate = $returnDate->diffInDays($dueDate);
@@ -72,9 +72,10 @@ class ReturnController extends Controller
         ]);
 
         if ($denda > 0) {
-            return back()->with('success', "Pengembalian dicatat. Denda: Rp " . number_format($denda, 0, ',', '.'));
-        } else {
-            return back()->with('success', 'Pengembalian dicatat tanpa denda');
+            return back()->with('success', 'Pengembalian dicatat. Denda: Rp ' . number_format($denda, 0, ',', '.'));
         }
+
+        return back()->with('success', 'Pengembalian dicatat tanpa denda');
     }
 }
+

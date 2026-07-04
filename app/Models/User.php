@@ -41,14 +41,6 @@ class User extends Authenticatable
     }
 
     /**
-<<<<<<< HEAD
-     * Relasi: satu user bisa memiliki banyak peminjaman
-     */
-    public function peminjaman()
-    {
-        return $this->hasMany(Peminjaman::class);
-    }
-=======
      * Get all loans for this user
      */
     public function peminjaman(): HasMany
@@ -71,6 +63,5 @@ class User extends Authenticatable
     {
         return $this->role === 'admin' || $this->email === 'admin@library.com';
     }
->>>>>>> enter/feature/loan-system
 }
 

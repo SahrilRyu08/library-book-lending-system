@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PeminjamanDetail extends Model
 {
     protected $table = 'peminjaman_detail';
-    
+
     protected $fillable = [
         'peminjaman_id',
         'buku_id',
-        'jumlah'
+        'jumlah',
     ];
 
     /**
@@ -31,3 +31,4 @@ class PeminjamanDetail extends Model
         return $this->belongsTo(Buku::class);
     }
 }
+

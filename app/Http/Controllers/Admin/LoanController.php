@@ -14,18 +14,24 @@ class LoanController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Peminjaman::with(['user', 'detail.buku'])
-                        ->whereIn('status', ['pending', 'dipinjam']);
+        $query = Peminjaman::with(['user', 'detail.buku']);
 
         // Search filter
         if ($request->search) {
             $q = strtolower($request->search);
-            $query->whereHas('user', function($q_user) use ($q) {
-                $q_user->whereRaw("LOWER(name) LIKE ?", ["%{$q}%"])
-                    ->orWhereRaw("LOWER(email) LIKE ?", ["%{$q}%"]);
-            })->orWhereHas('detail.buku', function($q_buku) use ($q) {
-                $q_buku->whereRaw("LOWER(judul) LIKE ?", ["%{$q}%"]);
+            $query->where(function ($qq) use ($q) {
+                $qq->whereHas('user', function ($q_user) use ($q) {
+                    $q_user->whereRaw("LOWER(name) LIKE ?", ["%{$q}%"])
+                        ->orWhereRaw("LOWER(email) LIKE ?", ["%{$q}%"]);
+                })->orWhereHas('detail.buku', function ($q_buku) use ($q) {
+                    $q_buku->whereRaw("LOWER(judul) LIKE ?", ["%{$q}%"]);
+                });
             });
+        }
+
+        // Default: show pending + active
+        if (!$request->status) {
+            $query->whereIn('status', ['pending', 'dipinjam']);
         }
 
         // Status filter
@@ -56,15 +62,14 @@ class LoanController extends Controller
     public function show($id)
     {
         $loan = Peminjaman::with(['user', 'detail.buku'])->findOrFail($id);
-        $isDone = $loan->status === 'selesai';
 
-        return view('admin.loans.show', compact('loan', 'isDone'));
+        return view('admin.loans.show', compact('loan'));
     }
 
     /**
      * Approve a pending loan
      */
-    public function approve($id)
+    public function confirm($id)
     {
         $loan = Peminjaman::findOrFail($id);
 
@@ -86,7 +91,7 @@ class LoanController extends Controller
     /**
      * Reject a pending loan
      */
-    public function reject($id)
+    public function reject(Request $request, $id)
     {
         $loan = Peminjaman::findOrFail($id);
 
@@ -99,3 +104,4 @@ class LoanController extends Controller
         return back()->with('success', 'Permintaan peminjaman telah ditolak');
     }
 }
+
