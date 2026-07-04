@@ -5,54 +5,63 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Models\Buku;
 use App\Models\Kategori;
-use App\Models\PeminjamanDetail;
-use Illuminate\Http\Request;
+use App\Models\Peminjaman;
+use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $query = Buku::with('kategori');
-
-        $query->when($request->search, function ($q) use ($request) {
-            $q->where('judul', 'LIKE', '%' . $request->search . '%')
-              ->orWhere('penulis', 'LIKE', '%' . $request->search . '%');
-        });
-
-        $query->when($request->category, function ($q) use ($request) {
-            $q->where('kategori_id', $request->category);
-        });
-
-        $buku = $query->paginate(12)->withQueryString();
-
         $categories = Kategori::all();
+        $query = Buku::query();
 
-        $buku->each(function ($item) {
-            $sedangDipinjam = PeminjamanDetail::where('buku_id', $item->id)
-                                ->whereHas('peminjaman', function($q) {
-                                    $q->where('status', 'dipinjam');
-                                })->sum('jumlah');
+        if (request()->has('search') && request()->get('search') != '') {
+            $searchTerm = request()->get('search');
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('judul', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('penulis', 'like', '%' . $searchTerm . '%');
+            });
+        }
 
-            $item->stok_tersedia = $item->stok - $sedangDipinjam;
+        if (request()->has('category') && request()->get('category') != '') {
+            $query->where('kategori_id', request()->get('category'));
+        }
+
+        $books = $query->paginate(10);
+
+        $books->each(function ($buku) {
+            $totalDipinjam = DB::table('peminjaman_detail')
+                ->join('peminjaman', 'peminjaman_detail.peminjaman_id', '=', 'peminjaman.id')
+                ->where('peminjaman_detail.buku_id', $buku->id)
+                ->whereIn('peminjaman.status', ['dipinjam', 'terlambat'])
+                ->sum('peminjaman_detail.jumlah');
+
+            $buku->sisa_stok = max(0, $buku->stok - $totalDipinjam);
         });
 
-        return view('member.books.index', ['books'=> $buku, 'categories' => $categories]);
+        return view('member.books.index', compact('books', 'categories'));
     }
 
     public function show($id)
     {
-        $buku = Buku::with('kategori')->findOrFail($id);
+        $book = Buku::findOrFail($id);
 
-        $sedangDipinjam = PeminjamanDetail::where('buku_id', $buku->id)
-                            ->whereHas('peminjaman', function($q) {
-                                $q->where('status', 'dipinjam');
-                            })->sum('jumlah');
+        $totalDipinjam = DB::table('peminjaman_detail')
+            ->join('peminjaman', 'peminjaman_detail.peminjaman_id', '=', 'peminjaman.id')
+            ->where('peminjaman_detail.buku_id', $book->id)
+            ->whereIn('peminjaman.status', ['dipinjam', 'terlambat'])
+            ->sum('peminjaman_detail.jumlah');
 
-        $buku->stok_tersedia = $buku->stok - $sedangDipinjam;
+        $book->sisa_stok = max(0, $book->stok - $totalDipinjam);
 
-        $kuotaAktif = 0;
+        $kuotaAktif = DB::table('peminjaman_detail')
+            ->join('peminjaman', 'peminjaman_detail.peminjaman_id', '=', 'peminjaman.id')
+            ->where('peminjaman.user_id', auth()->id())
+            ->whereIn('peminjaman.status', ['dipinjam', 'terlambat'])
+            ->sum('peminjaman_detail.jumlah');
+
         $maxPinjam = 3;
 
-        return view('member.books.show', ['book' => $buku, 'kuotaAktif' => $kuotaAktif, 'maxPinjam' => $maxPinjam]);
+        return view('member.books.show', compact('book', 'kuotaAktif', 'maxPinjam'));
     }
 }

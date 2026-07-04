@@ -56,4 +56,5 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/returns',           [ReturnController::class, 'index'])->name('returns.index');
     Route::post('/returns',          [ReturnController::class, 'store'])->name('returns.store');
     Route::get('/reports',           [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/keranjang', [CartController::class, 'index'])->name('member.cart.index');
 });

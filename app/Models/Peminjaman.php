@@ -51,6 +51,6 @@ class Peminjaman extends Model
      */
     public function detail()
     {
-        return $this->hasMany(PeminjamanDetail::class);
+        return $this->hasMany(PeminjamanDetail::class, 'peminjaman_id');
     }
 }

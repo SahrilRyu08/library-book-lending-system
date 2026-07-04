@@ -1,12 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mt-4">
-    <h2>Keranjang Peminjaman</h2>
-
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
+<div class="container">
+    <h3>Keranjang Peminjaman</h3>
 
     @if($books->isEmpty())
         <div class="text-center py-5">
@@ -17,6 +13,7 @@
         <table class="table table-bordered">
             <thead>
                 <tr>
+                    <th>Cover</th>
                     <th>Judul</th>
                     <th>Jumlah</th>
                     <th>Aksi</th>
@@ -25,11 +22,13 @@
             <tbody>
                 @foreach($books as $book)
                 <tr>
+                    <td><img src="{{ asset($book->cover) }}" width="50" alt="Cover"></td>
                     <td>{{ $book->judul }}</td>
                     <td>{{ $cart[$book->id] }}</td>
                     <td>
                         <form action="{{ route('member.cart.destroy', $book->id) }}" method="POST">
-                            @csrf @method('DELETE')
+                            @csrf
+                            @method('DELETE')
                             <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                         </form>
                     </td>
@@ -37,11 +36,9 @@
                 @endforeach
             </tbody>
         </table>
-
-        <form action="{{ route('member.loans.store') }}" method="POST">
-            @csrf
-            <button type="submit" class="btn btn-success">Ajukan Peminjaman</button>
-        </form>
+        <div class="text-end">
+            <a href="{{ route('member.loans.index') }}" class="btn btn-success">Ajukan Peminjaman</a>
+        </div>
     @endif
 </div>
 @endsection

@@ -13,7 +13,7 @@
     <div class="col-md-3">
         <div class="moco-book-cover" style="aspect-ratio:3/4;height:auto;">
             @if($book->cover)
-                <img src="{{ asset('storage/' . $book->cover) }}" alt="{{ $book->judul }}">
+                <img src="{{ asset($book->cover) }}" alt="{{ $book->judul }}">
             @else
                 <i class="bi bi-image fs-1" style="color:var(--moco-text-faint);"></i>
             @endif
@@ -55,7 +55,7 @@
                             <div class="col-auto">
                                 <label class="moco-label">Jumlah</label>
                                 <input type="number" name="jumlah" value="1" min="1"
-                                       max="{{ min($book->tersedia, $maxPinjam - $kuotaAktif) }}"
+                                       max="{{ min($book->sisa_stok, $maxPinjam - $kuotaAktif) }}"
                                        class="form-control moco-input" style="width:90px;">
                             </div>
                             <div class="col-auto">

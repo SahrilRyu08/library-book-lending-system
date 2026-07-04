@@ -333,6 +333,7 @@ h1, h2, h3, h4, h5, h6 {
     height: 100%;
     object-fit: cover;
     border-radius: 8px;
+    display: block;
 }
 .moco-book-title {
     font-weight: 600;
@@ -512,4 +513,10 @@ h1, h2, h3, h4, h5, h6 {
     padding: 2px 7px;
     border-radius: 5px;
     letter-spacing: .3px;
+}
+
+/* Membatasi ukuran ikon SVG di dalam pagination agar tidak raksasa */
+nav[role="navigation"] svg {
+    width: 20px;
+    height: 20px;
 }

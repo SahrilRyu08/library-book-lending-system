@@ -8,10 +8,13 @@
 
     {{-- Bootstrap 5 --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
     {{-- Bootstrap Icons --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    {{-- Google Fonts: Inter --}}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    {{-- Google Fonts --}}
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     {{-- MOCO Custom CSS --}}
     <link href="{{ asset('css/moco.css') }}" rel="stylesheet">
 
@@ -28,25 +31,33 @@
         MOCO
     </a>
 
-    {{-- Nav Links --}}
-    <div class="d-flex align-items-center">
-        <a href="{{ route('member.books.index') }}"
-        class="nav-link {{ request()->routeIs('member.books.*') ? 'active' : '' }}">
-            Katalog
-        </a>
-        <a href="{{ route('member.loans.index') }}"
-        class="nav-link {{ request()->routeIs('member.loans.index') ? 'active' : '' }}">
-            Peminjaman Saya
-        </a>
-        <a href="{{ route('member.loans.history') }}"
-        class="nav-link {{ request()->routeIs('member.loans.history') ? 'active' : '' }}">
-            Riwayat
-        </a>
-    </div>
+        {{-- Nav Links --}}
+            <div class="d-flex align-items-center">
+                <a href="{{ route('member.books.index') }}"
+                class="nav-link {{ request()->routeIs('member.books.*') ? 'active' : '' }}">
+                    Katalog
+                </a>
+                <a href="{{ route('member.loans.index') }}"
+                class="nav-link {{ request()->routeIs('member.loans.index') ? 'active' : '' }}">
+                    Peminjaman Saya
+                </a>
+                <a href="{{ route('member.loans.history') }}"
+                class="nav-link {{ request()->routeIs('member.loans.history') ? 'active' : '' }}">
+                    Riwayat
+                </a>
 
-    {{-- Notif + User --}}
-    <div class="d-flex align-items-center gap-3">
-
+                {{-- TAMBAHAN MENU KERANJANG --}}
+                <a href="{{ route('member.cart.index') }}"
+                   class="nav-link {{ request()->routeIs('member.cart.*') ? 'active' : '' }} position-relative">
+                    Keranjang
+                    @php $cartCount = count(session('cart', [])); @endphp
+                    @if($cartCount > 0)
+                        <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" style="font-size: 0.6rem;">
+                            {{ $cartCount }}
+                        </span>
+                    @endif
+                </a>
+            </div>
         {{-- Bell --}}
         <div class="moco-bell position-relative" id="notifToggle">
             <i class="bi bi-bell fs-5"></i>
