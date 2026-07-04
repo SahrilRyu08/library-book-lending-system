@@ -11,7 +11,7 @@
             <i class="bi bi-search"></i>
         </span>
         <input type="text" name="search" value="{{ request('search') }}"
-               class="form-control moco-input" placeholder="Cari anggota / buku...">
+            class="form-control moco-input" placeholder="Cari anggota / buku...">
     </div>
     <select name="status" class="form-select moco-input" style="max-width:180px;">
         <option value="">Semua</option>
