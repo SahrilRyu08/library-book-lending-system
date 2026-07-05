@@ -3,7 +3,7 @@
 
 @section('content')
     <div class="moco-page-title">Riwayat Peminjaman</div>
-    <div class="moco-page-sub">Semua buku yang pernah kamu pinjam</div>
+    <div class="moco-page-sub">Semua buku yang pernah / sedang telat kamu pinjam</div>
 
     <div class="moco-card p-0" style="overflow:hidden;">
         <table class="table moco-table mb-0">
@@ -24,7 +24,7 @@
                     <td>
                         {{ $loan->tanggal_kembali
                             ? \Carbon\Carbon::parse($loan->tanggal_kembali)->format('d M Y')
-                            : '-' }}
+                            : 'Belum dikembalikan' }}
                     </td>
                     <td>
                         @if($loan->denda > 0)
@@ -36,8 +36,12 @@
                         @endif
                     </td>
                     <td>
-                        @if($loan->denda > 0)
-                            <span class="badge-moco-late">Terlambat</span>
+                        {{-- 'terlambat' = masih dipinjam tapi lewat jatuh tempo (belum dikembalikan) --}}
+                        {{-- 'selesai' dengan denda > 0 = sudah dikembalikan tapi telat --}}
+                        @if($loan->status === 'terlambat')
+                            <span class="badge-moco-late">Masih Terlambat</span>
+                        @elseif($loan->denda > 0)
+                            <span class="badge-moco-late">Dikembalikan Terlambat</span>
                         @else
                             <span class="badge-moco-done">Tepat Waktu</span>
                         @endif

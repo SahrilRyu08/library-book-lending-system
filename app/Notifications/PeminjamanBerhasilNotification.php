@@ -8,6 +8,11 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
+/**
+ * Dikirim saat anggota SELESAI mengajukan peminjaman (status masih 'menunggu',
+ * belum dikonfirmasi admin). Untuk notifikasi saat admin sudah konfirmasi
+ * (status jadi 'dipinjam'), pakai PeminjamanDikonfirmasiNotification.
+ */
 class PeminjamanBerhasilNotification extends Notification implements ShouldQueue
 {
     use Queueable;
@@ -16,9 +21,6 @@ class PeminjamanBerhasilNotification extends Notification implements ShouldQueue
     {
     }
 
-    /**
-     * Kirim ke database (panel notif) dan email sekaligus.
-     */
     public function via(object $notifiable): array
     {
         return ['database', 'mail'];
@@ -26,41 +28,35 @@ class PeminjamanBerhasilNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $judulBuku = $this->peminjaman->details
+        $judulBuku = $this->peminjaman->detail
             ->pluck('buku.judul')
             ->filter()
             ->implode(', ');
 
-        $tanggalKembali = optional($this->peminjaman->jatuh_tempo)
-            ->format('d M Y');
+        $jatuhTempo = optional($this->peminjaman->jatuh_tempo)->format('d M Y');
 
         return (new MailMessage)
-            ->subject('Peminjaman Buku Berhasil - MOCO')
+            ->subject('Pengajuan Peminjaman Diterima - MOCO')
             ->greeting('Halo, ' . $notifiable->nama . '!')
-            ->line('Peminjaman buku kamu berhasil diproses.')
+            ->line('Pengajuan peminjaman buku kamu sudah kami terima dan sedang menunggu konfirmasi admin.')
             ->line('Judul buku: ' . ($judulBuku ?: '-'))
-            ->line('Batas pengembalian: ' . ($tanggalKembali ?: '-'))
-            ->line('Jangan lupa kembalikan tepat waktu supaya terhindar dari denda.')
-            ->action('Lihat Peminjaman Saya', route('member.loans.index'))
-            ->line('Terima kasih sudah menggunakan MOCO.');
+            ->line('Estimasi batas pengembalian: ' . ($jatuhTempo ?: '-'))
+            ->line('Kamu akan mendapat notifikasi begitu admin mengonfirmasi peminjaman ini.')
+            ->action('Lihat Peminjaman Saya', route('member.loans.index'));
     }
 
-    /**
-     * Disimpan ke tabel notifications, dipakai buat render panel notif
-     * di layout (data['title'], data['message'], data['type'], dst).
-     */
     public function toArray(object $notifiable): array
     {
-        $judulBuku = $this->peminjaman->details
+        $judulBuku = $this->peminjaman->detail
             ->pluck('buku.judul')
             ->filter()
             ->implode(', ');
 
         return [
-            'type' => 'loan_request',
-            'title' => 'Peminjaman Berhasil',
-            'message' => 'Peminjaman "' . ($judulBuku ?: 'buku') . '" berhasil diproses.',
-            'action_url' => route('member.loans.show', $this->peminjaman->id),
+            'type'          => 'loan_request',
+            'title'         => 'Pengajuan Diterima',
+            'message'       => 'Pengajuan peminjaman "' . ($judulBuku ?: 'buku') . '" sedang menunggu konfirmasi admin.',
+            'action_url'    => route('member.loans.show', $this->peminjaman->id),
             'peminjaman_id' => $this->peminjaman->id,
         ];
     }

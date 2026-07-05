@@ -3,7 +3,7 @@
 
 @section('content')
     <div class="moco-page-title">Peminjaman Aktif</div>
-    <div class="moco-page-sub">Daftar buku yang sedang dipinjam oleh anggota</div>
+    <div class="moco-page-sub">Daftar buku yang sedang dipinjam / diajukan oleh anggota</div>
 
     <form method="GET" action="{{ route('admin.loans.index') }}" class="d-flex gap-2 mb-3">
         <div class="input-group" style="max-width:300px;">
@@ -15,6 +15,7 @@
         </div>
         <select name="status" class="form-select moco-input" style="max-width:180px;">
             <option value="">Semua</option>
+            <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Menunggu Konfirmasi</option>
             <option value="aman"     {{ request('status') == 'aman'     ? 'selected' : '' }}>Aman</option>
             <option value="mendekati"{{ request('status') == 'mendekati' ? 'selected' : '' }}>H-3</option>
             <option value="terlambat"{{ request('status') == 'terlambat' ? 'selected' : '' }}>Terlambat</option>
@@ -38,9 +39,10 @@
             <tbody>
             @forelse($loans as $loan)
                 @php
-                    $daysLeft = $loan->sisa_hari;
-                    $isLate   = $loan->is_late;
-                    $isNear   = $loan->is_near_due;
+                    $isMenunggu = $loan->status === 'menunggu';
+                    $daysLeft   = $loan->sisa_hari;
+                    $isLate     = $loan->is_late;
+                    $isNear     = $loan->is_near_due;
                 @endphp
                 <tr>
                     <td>
@@ -51,7 +53,9 @@
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->jatuh_tempo)->format('d M Y') }}</td>
                     <td>
-                        @if($isLate)
+                        @if($isMenunggu)
+                            <span class="moco-note">-</span>
+                        @elseif($isLate)
                             <span style="color:var(--moco-warn);font-weight:700;">
                                 {{ abs((int)$daysLeft) }} hari telat
                             </span>
@@ -62,7 +66,11 @@
                         @endif
                     </td>
                     <td>
-                        @if($isLate)
+                        @if($isMenunggu)
+                            <span class="badge-moco-active">
+                                <i class="bi bi-hourglass-split"></i> Menunggu Konfirmasi
+                            </span>
+                        @elseif($isLate)
                             <span class="badge-moco-late">Terlambat</span>
                         @elseif($isNear)
                             <span class="badge-moco-late">

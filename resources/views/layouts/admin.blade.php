@@ -69,8 +69,8 @@
                     @endif
                 </div>
                 @forelse($notifications as $notification)
-                    <a href="{{ $notification->data['action_url'] ?? '#' }}"
-                        class="text-decoration-none text-dark">
+{{--                    <a href="{{ $notification->data['action_url'] ?? '#' }}"--}}
+{{--                        class="text-decoration-none text-dark">--}}
                         <div class="moco-notif-item {{ $notification->read_at ? '' : 'unread' }}">
                             <div class="notif-ic">
                                 @switch($notification->data['type'] ?? '')
@@ -105,7 +105,7 @@
                                 </div>
                             </div>
                         </div>
-                    </a>
+{{--                    </a>--}}
                 @empty
                     <div class="text-center text-muted p-4">
                         <i class="bi bi-bell-slash fs-3"></i>

@@ -2,65 +2,57 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Peminjaman;
 use App\Notifications\JatuhTempoNotification;
 use App\Notifications\KeterlambatanNotification;
 use App\Services\LoanService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 
+/**
+ * Dijalankan harian lewat scheduler (routes/console.php atau Kernel):
+ *   $schedule->command('loans:check-due')->dailyAt('07:00');
+ */
 class CheckDueLoans extends Command
 {
     protected $signature = 'loans:check-due';
 
-    protected $description = 'Cek peminjaman jatuh tempo H-3 dan tandai peminjaman yang sudah terlambat';
+    protected $description = 'Tandai peminjaman terlambat & kirim notifikasi jatuh tempo / keterlambatan';
 
     public function handle(LoanService $loanService): int
     {
-        $this->handleReminder($loanService);
-        $this->handleTerlambat($loanService);
+        // 1. Tandai peminjaman yang sudah lewat jatuh_tempo jadi 'terlambat'
+        $jumlahTerlambat = $loanService->tandaiTerlambat();
+        $this->info("Menandai {$jumlahTerlambat} peminjaman menjadi terlambat.");
 
-        return self::SUCCESS;
-    }
+        // 2. Reminder H-3 untuk yang masih 'dipinjam'
+        $hMinus = 3;
+        $tanggalTarget = Carbon::now()->addDays($hMinus)->toDateString();
 
-    /**
-     * Kirim reminder H-minus sesuai config('library.notif_h_minus').
-     */
-    protected function handleReminder(LoanService $loanService): void
-    {
-        $hMinus = (int) config('library.notif_h_minus', 3);
+        $akanJatuhTempo = Peminjaman::where('status', 'dipinjam')
+            ->whereDate('jatuh_tempo', $tanggalTarget)
+            ->with(['user', 'detail.buku'])
+            ->get();
 
-        $items = $loanService->ambilJatuhTempoMendekati($hMinus);
-
-        foreach ($items as $peminjaman) {
-            // Cek supaya tidak kirim notif ganda di hari yang sama
-            $sudahDikirim = $peminjaman->user->notifications()
-                ->where('type', JatuhTempoNotification::class)
-                ->whereDate('created_at', now()->toDateString())
-                ->where('data->peminjaman_id', $peminjaman->id)
-                ->exists();
-
-            if (!$sudahDikirim) {
-                $peminjaman->user->notify(
-                    new JatuhTempoNotification($peminjaman, $hMinus)
-                );
+        foreach ($akanJatuhTempo as $loan) {
+            if ($loan->user) {
+                $loan->user->notify(new JatuhTempoNotification($loan, $hMinus));
             }
         }
+        $this->info("Mengirim {$akanJatuhTempo->count()} reminder H-{$hMinus}.");
 
-        $this->info("Reminder H-{$hMinus} terkirim ke {$items->count()} peminjaman.");
-    }
+        // 3. Notifikasi keterlambatan untuk yang baru saja jadi 'terlambat'
+        $terlambat = Peminjaman::where('status', 'terlambat')
+            ->with(['user', 'detail.buku'])
+            ->get();
 
-    /**
-     * Tandai peminjaman yang lewat jatuh tempo sebagai terlambat,
-     * lalu kirim notifikasi HANYA untuk yang baru saja berubah status
-     * (supaya tidak mengirim notifikasi ganda tiap hari).
-     */
-    protected function handleTerlambat(LoanService $loanService): void
-    {
-        $baruTerlambat = $loanService->tandaiTerlambat();
-
-        foreach ($baruTerlambat as $peminjaman) {
-            $peminjaman->user->notify(new KeterlambatanNotification($peminjaman));
+        foreach ($terlambat as $loan) {
+            if ($loan->user) {
+                $loan->user->notify(new KeterlambatanNotification($loan));
+            }
         }
+        $this->info("Mengirim {$terlambat->count()} notifikasi keterlambatan.");
 
-        $this->info("{$baruTerlambat->count()} peminjaman baru ditandai terlambat.");
+        return self::SUCCESS;
     }
 }

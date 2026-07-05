@@ -52,4 +52,16 @@ class LoanController extends Controller
 
         return view('admin.loans.show', compact('loan', 'isDone'));
     }
+
+    public function confirm($id)
+    {
+        $loan = Peminjaman::with(['user', 'detail.buku'])->findOrFail($id);
+        $loan->update(['status' => 'dipinjam']);
+
+        if ($loan->user) {
+            $loan->user->notify(new \App\Notifications\PeminjamanDikonfirmasiNotification($loan));
+        }
+
+        return back()->with('success', 'Peminjaman berhasil dikonfirmasi.');
+    }
 }

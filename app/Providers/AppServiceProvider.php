@@ -23,30 +23,20 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
-        View::composer('layouts.app', function ($view) {
-
-            if (!Auth::check()) {
-
-                $view->with([
-                    'notifications' => collect(),
-                    'unreadNotifCount' => 0,
-                ]);
-
-                return;
+        View::composer(['layouts.app', 'layouts.admin'], function ($view) {
+            if (auth()->check()) {
+                $view->with(
+                    'notifications',
+                    auth()->user()->notifications()->latest()->take(3)->get()
+                );
+                $view->with(
+                    'unreadNotifCount',
+                    auth()->user()->unreadNotifications()->count()
+                );
+            } else {
+                $view->with('notifications', collect());
+                $view->with('unreadNotifCount', 0);
             }
-
-            $user = Auth::user();
-
-            $view->with([
-                'notifications' => $user->notifications()
-                    ->latest()
-                    ->take(5)
-                    ->get(),
-
-                'unreadNotifCount' => $user
-                    ->unreadNotifications()
-                    ->count(),
-            ]);
         });
     }
 }

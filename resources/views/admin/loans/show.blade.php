@@ -13,16 +13,17 @@
 
     @php
         $maxPinjam   = config('library.max_buku_per_pinjam', 3);
-        $activeLoans = \App\Models\Peminjaman::milikUser($loan->user_id)
-            ->aktif()
+        $activeLoans = \App\Models\Peminjaman::where('user_id', $loan->user_id)
+            ->whereIn('status', ['menunggu', 'dipinjam'])
             ->with('detail')
             ->get()
             ->sum(fn ($p) => $p->detail->sum('jumlah'));
 
-        $daysLeft = $loan->sisa_hari;
-        $isLate   = $loan->is_late;
-        $isNear   = $loan->is_near_due;
-        $denda    = app(\App\Services\LoanService::class)->hitungDenda($loan);
+        $isMenunggu = $loan->status === 'menunggu';
+        $daysLeft   = $loan->sisa_hari;
+        $isLate     = $loan->is_late;
+        $isNear     = $loan->is_near_due;
+        $denda      = app(\App\Services\LoanService::class)->hitungDenda($loan);
     @endphp
 
     <div class="row g-4">
@@ -37,7 +38,7 @@
                 <div class="moco-note mb-3">{{ $loan->user->email ?? '-' }}</div>
                 <div class="moco-eyebrow mb-2">Kuota Pinjam</div>
                 <div style="font-size:13.5px;">
-                    Sedang meminjam <strong>{{ $activeLoans }}</strong>
+                    Sedang meminjam/mengajukan <strong>{{ $activeLoans }}</strong>
                     dari maks <strong>{{ $maxPinjam }}</strong> buku
                 </div>
                 <div class="moco-quota-bar mt-2" style="max-width:100%;">
@@ -65,10 +66,16 @@
                     </div>
                     <div class="col-6">
                         <div class="moco-note mb-1">Status</div>
-                        @if($isLate)
+                        @if($isMenunggu)
+                            <span class="badge-moco-active">
+                            <i class="bi bi-hourglass-split"></i> Menunggu Konfirmasi
+                        </span>
+                        @elseif($isLate)
                             <span class="badge-moco-late">Terlambat {{ abs((int)$daysLeft) }} hari</span>
                         @elseif($isNear)
                             <span class="badge-moco-late"><i class="bi bi-bell"></i> Jatuh tempo H-{{ (int)$daysLeft }}</span>
+                        @elseif($loan->status === 'selesai')
+                            <span class="badge-moco-done">Selesai</span>
                         @else
                             <span class="badge-moco-active">Dipinjam — {{ (int)$daysLeft }} hari lagi</span>
                         @endif
@@ -104,9 +111,17 @@
                     </table>
                 </div>
 
-                {{-- Tombol Kembalikan --}}
-                @if(!$isDone)
-                    <div class="mt-3">
+                {{-- Aksi --}}
+                <div class="mt-3 d-flex gap-2">
+                    @if($isMenunggu)
+                        <form method="POST" action="{{ route('admin.loans.confirm', $loan->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-moco"
+                                    onclick="return confirm('Konfirmasi peminjaman ini?')">
+                                <i class="bi bi-check-circle"></i> Konfirmasi Peminjaman
+                            </button>
+                        </form>
+                    @elseif(!$isDone)
                         <form method="POST" action="{{ route('admin.returns.store') }}">
                             @csrf
                             <input type="hidden" name="loan_id" value="{{ $loan->id }}">
@@ -115,8 +130,8 @@
                                 <i class="bi bi-arrow-return-left"></i> Proses Pengembalian
                             </button>
                         </form>
-                    </div>
-                @endif
+                    @endif
+                </div>
             </div>
         </div>
     </div>

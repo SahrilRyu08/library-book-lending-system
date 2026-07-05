@@ -3,12 +3,12 @@
 
 @section('content')
     <div class="moco-page-title">Peminjaman Saya</div>
-    <div class="moco-page-sub">Buku yang sedang kamu pinjam saat ini</div>
+    <div class="moco-page-sub">Buku yang sedang kamu pinjam / ajukan saat ini</div>
 
     <div class="moco-alert moco-alert-info mb-4">
         <i class="bi bi-info-circle"></i>
         <div>
-            Kuota aktif: <strong>{{ $aktif }} dari {{ $maxPinjam }} buku</strong> sedang dipinjam
+            Kuota aktif: <strong>{{ $aktif }} dari {{ $maxPinjam }} buku</strong> sedang dipinjam/diajukan
             &middot; sisa <strong>{{ max($maxPinjam - $aktif, 0) }}</strong> kuota tersedia
         </div>
     </div>
@@ -28,17 +28,18 @@
             <tbody>
             @forelse($aktifLoans as $loan)
                 @php
-                    $daysLeft = $loan->sisa_hari;
-                    $isLate   = $loan->is_late;
-                    $isNear   = $loan->is_near_due;
+                    $isMenunggu = $loan->status === 'menunggu';
+                    $daysLeft   = $loan->sisa_hari;
+                    $isLate     = $loan->is_late;
+                    $isNear     = $loan->is_near_due;
                 @endphp
                 <tr>
                     <td><strong>{{ $loan->detail->first()->buku->judul ?? '-' }}</strong></td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->jatuh_tempo)->format('d M Y') }}</td>
                     <td>
-                        @if($loan->status === 'menunggu')
-                            <span class="moco-note">—</span>
+                        @if($isMenunggu)
+                            <span class="moco-note">-</span>
                         @elseif($isLate)
                             <span style="color:var(--moco-warn);font-weight:700;">
                                 {{ abs((int)$daysLeft) }} hari telat
@@ -50,8 +51,8 @@
                         @endif
                     </td>
                     <td>
-                        @if($loan->status === 'menunggu')
-                            <span class="badge-moco-late">
+                        @if($isMenunggu)
+                            <span class="badge-moco-active">
                                 <i class="bi bi-hourglass-split"></i> Menunggu Konfirmasi
                             </span>
                         @elseif($isLate)
@@ -74,7 +75,7 @@
             @empty
                 <tr>
                     <td colspan="6" class="text-center moco-note py-5">
-                        Kamu belum meminjam buku apapun saat ini.<br>
+                        Kamu belum meminjam / mengajukan buku apapun saat ini.<br>
                         <a href="{{ route('member.books.index') }}" style="color:var(--moco-blue);">
                             Jelajahi katalog →
                         </a>

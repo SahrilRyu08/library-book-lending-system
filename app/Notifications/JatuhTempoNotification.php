@@ -25,7 +25,7 @@ class JatuhTempoNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $judulBuku = $this->peminjaman->details
+        $judulBuku = $this->peminjaman->detail
             ->pluck('buku.judul')
             ->filter()
             ->implode(', ');
@@ -44,7 +44,7 @@ class JatuhTempoNotification extends Notification implements ShouldQueue
 
     public function toArray(object $notifiable): array
     {
-        $judulBuku = $this->peminjaman->details
+        $judulBuku = $this->peminjaman->detail
             ->pluck('buku.judul')
             ->filter()
             ->implode(', ');

@@ -3,13 +3,16 @@
 namespace App\Notifications;
 
 use App\Models\Peminjaman;
-use App\Services\LoanService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class KeterlambatanNotification extends Notification implements ShouldQueue
+/**
+ * Dikirim saat admin mengonfirmasi pengajuan (status: menunggu -> dipinjam).
+ * Pasangan dari PeminjamanBerhasilNotification yang dikirim di tahap pengajuan.
+ */
+class PeminjamanDikonfirmasiNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -31,20 +34,14 @@ class KeterlambatanNotification extends Notification implements ShouldQueue
 
         $jatuhTempo = optional($this->peminjaman->jatuh_tempo)->format('d M Y');
 
-        // Pakai LoanService biar rumus denda cuma ada di satu tempat,
-        // konsisten dengan yang ditampilkan di view member/admin.
-        $estimasiDenda = app(LoanService::class)->hitungDenda($this->peminjaman);
-
         return (new MailMessage)
-            ->subject('Peminjaman Buku Terlambat - MOCO')
+            ->subject('Peminjaman Dikonfirmasi - MOCO')
             ->greeting('Halo, ' . $notifiable->nama . '!')
-            ->line('Peminjaman buku kamu sudah melewati batas pengembalian.')
+            ->line('Peminjaman buku kamu sudah dikonfirmasi oleh admin dan resmi dipinjam.')
             ->line('Judul buku: ' . ($judulBuku ?: '-'))
             ->line('Batas pengembalian: ' . ($jatuhTempo ?: '-'))
-            ->line('Estimasi denda saat ini: Rp ' . number_format($estimasiDenda, 0, ',', '.'))
-            ->line('Denda terus bertambah setiap hari sampai buku dikembalikan.')
-            ->action('Lihat Peminjaman Saya', route('member.loans.index'))
-            ->line('Segera kembalikan buku untuk menghindari denda lebih besar.');
+            ->line('Jangan lupa kembalikan tepat waktu supaya terhindar dari denda.')
+            ->action('Lihat Peminjaman Saya', route('member.loans.index'));
     }
 
     public function toArray(object $notifiable): array
@@ -55,9 +52,9 @@ class KeterlambatanNotification extends Notification implements ShouldQueue
             ->implode(', ');
 
         return [
-            'type'          => 'late',
-            'title'         => 'Peminjaman Terlambat',
-            'message'       => 'Buku "' . ($judulBuku ?: '-') . '" sudah melewati batas pengembalian.',
+            'type'          => 'loan_confirmed',
+            'title'         => 'Peminjaman Dikonfirmasi',
+            'message'       => 'Peminjaman "' . ($judulBuku ?: 'buku') . '" sudah dikonfirmasi admin.',
             'action_url'    => route('member.loans.show', $this->peminjaman->id),
             'peminjaman_id' => $this->peminjaman->id,
         ];

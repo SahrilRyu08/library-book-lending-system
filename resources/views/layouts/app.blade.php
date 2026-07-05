@@ -88,9 +88,9 @@
                     @endif
                 </div>
                 @forelse($notifications as $notif)
-                    <a
-                        href="{{ $notif->data['action_url'] ?? '#' }}"
-                        class="text-decoration-none text-dark">
+{{--                    <a--}}
+{{--                        href="{{ $notif->data['action_url'] ?? '#' }}"--}}
+{{--                        class="text-decoration-none text-dark">--}}
                         <div
                             class="moco-notif-item {{ $notif->read_at ? '' : 'unread' }}">
                             <div class="notif-ic">
@@ -120,7 +120,7 @@
                                 </div>
                             </div>
                         </div>
-                    </a>
+{{--                    </a>--}}
                 @empty
                     <div class="p-4 text-center text-muted">
                         Belum ada notifikasi.

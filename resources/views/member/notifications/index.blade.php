@@ -4,7 +4,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="mb-0">Notifikasi</h3>
 
-        @if($notifications->where('read_at', null)->count() > 0)
+        @if($unreadCount > 0)
             <form action="{{ route('member.notifications.readAll') }}" method="POST">
                 @csrf
                 <button class="btn btn-sm btn-outline-primary">
@@ -29,9 +29,18 @@
                     <p class="mb-2">
                         {{ $notification->data['message'] ?? '-' }}
                     </p>
-                    <small class="text-muted">
-                        {{ $notification->created_at->diffForHumans() }}
-                    </small>
+
+                    @if(!empty($notification->data['action_url']))
+                        <a href="{{ $notification->data['action_url'] }}" class="small d-inline-block mb-2">
+                            Lihat Detail →
+                        </a>
+                    @endif
+
+                    <div>
+                        <small class="text-muted">
+                            {{ $notification->created_at->diffForHumans() }}
+                        </small>
+                    </div>
 
                     @if(!$notification->read_at)
                         <form

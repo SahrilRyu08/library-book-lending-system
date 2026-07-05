@@ -12,9 +12,10 @@
     <div class="moco-page-sub">Informasi transaksi peminjaman kamu</div>
 
     @php
-        $daysLeft = $loan->sisa_hari;
-        $isLate   = $loan->is_late;
-        $isNear   = $loan->is_near_due;
+        $isMenunggu = $loan->status === 'menunggu';
+        $daysLeft   = $loan->sisa_hari;
+        $isLate     = $loan->is_late;
+        $isNear     = $loan->is_near_due;
     @endphp
 
     <div class="moco-card">
@@ -33,10 +34,16 @@
             </div>
             <div class="col-6">
                 <div class="moco-note mb-1">Status</div>
-                @if($isLate)
+                @if($isMenunggu)
+                    <span class="badge-moco-active">
+                    <i class="bi bi-hourglass-split"></i> Menunggu Konfirmasi Admin
+                </span>
+                @elseif($isLate)
                     <span class="badge-moco-late">Terlambat {{ abs((int)$daysLeft) }} hari</span>
                 @elseif($isNear)
                     <span class="badge-moco-late"><i class="bi bi-bell"></i> H-{{ (int)$daysLeft }}</span>
+                @elseif($loan->status === 'selesai')
+                    <span class="badge-moco-done">Selesai</span>
                 @else
                     <span class="badge-moco-active">Dipinjam — {{ (int)$daysLeft }} hari lagi</span>
                 @endif

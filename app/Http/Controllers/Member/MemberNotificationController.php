@@ -17,9 +17,15 @@ class MemberNotificationController extends Controller
             ->latest()
             ->paginate(10);
 
+        // Dihitung terpisah dari $notifications karena itu sudah di-paginate
+        // (cuma 10 item per halaman) — kalau dihitung dari situ, tombol
+        // "Tandai Semua Dibaca" bisa hilang padahal masih ada unread
+        // di halaman lain.
+        $unreadCount = $request->user()->unreadNotifications()->count();
+
         return view(
             'member.notifications.index',
-            compact('notifications')
+            compact('notifications', 'unreadCount')
         );
     }
 
