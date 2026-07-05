@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,7 +21,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
-        Paginator::useBootstrapFive();
+        View::composer(['layouts.app', 'layouts.admin'], function ($view) {
+            if (auth()->check()) {
+                $view->with(
+                    'notifications',
+                    // Cuma 3 terbaru buat dropdown panel di navbar.
+                    // Daftar lengkap tetap ada di halaman "Lihat Semua"
+                    // (member.notifications.index / admin.notifications.index)
+                    // yang di-paginate 10 per halaman.
+                    auth()->user()->notifications()->latest()->take(3)->get()
+                );
+                $view->with(
+                    'unreadNotifCount',
+                    auth()->user()->unreadNotifications()->count()
+                );
+            } else {
+                $view->with('notifications', collect());
+                $view->with('unreadNotifCount', 0);
+            }
+        });
     }
 }
