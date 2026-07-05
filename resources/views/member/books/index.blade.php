@@ -30,36 +30,38 @@
 <div class="row g-3">
     @forelse($books as $book)
         <div class="col-md-3 col-sm-4 col-6">
-            <div class="moco-book-card {{ $book->stok <= 0 ? 'is-out' : '' }}">
+            {{-- Menggunakan sisa_stok untuk logika class is-out --}}
+            <div class="moco-book-card {{ $book->sisa_stok <= 0 ? 'is-out' : '' }}">
                 {{-- Cover --}}
                 <div class="moco-book-cover">
-                    @if($book->cover)
-                        <img src="{{ asset('storage/' . $book->cover) }}" alt="{{ $book->judul }}">
+                    @if($book->cover && file_exists(public_path($book->cover)))
+                        <img src="{{ asset($book->cover) }}" alt="{{ $book->judul }}">
                     @else
                         <i class="bi bi-image fs-2"></i>
                     @endif
                 </div>
 
-            <div class="moco-book-title">{{ $book->judul }}</div>
-            <div class="moco-book-author">{{ $book->penulis }}</div>
+                <div class="moco-book-title">{{ $book->judul }}</div>
+                <div class="moco-book-author">{{ $book->penulis }}</div>
 
-            <div class="moco-note mb-1" style="font-size:12px;">
-                {{ $book->kategori->nama_kategori ?? '-' }}
-            </div>
-            <div class="mb-2">
-                @if($book->stok > 0)
-                    <span class="badge-moco-stock">Stok: {{ $book->stok }}</span>
-                @else
-                    <span class="badge-moco-out">Stok Habis</span>
-                @endif
-            </div>
+                <div class="moco-note mb-1" style="font-size:12px;">
+                    {{ $book->kategori->nama_kategori ?? '-' }}
+                </div>
 
-            @if($book->stok > 0)
-                <a href="{{ route('member.books.show', $book->id) }}"
-                class="btn btn-moco btn-sm w-100">Lihat Detail</a>
-            @else
-                <button class="btn btn-moco-disabled btn-sm w-100" disabled>Tidak Tersedia</button>
-            @endif
+                {{-- Bagian Status Stok --}}
+                <div class="mt-auto">
+                    @if($book->sisa_stok > 0)
+                        <div class="mb-2">
+                            <span class="badge-moco-stock">Tersedia: {{ $book->sisa_stok }}</span>
+                        </div>
+                        <a href="{{ route('member.books.show', $book->id) }}" class="btn btn-moco btn-sm w-100">Lihat Detail</a>
+                    @else
+                        <div class="mb-2">
+                            <span class="badge-moco-stock" style="color: red; font-weight: bold;">Stok Habis</span>
+                        </div>
+                        <button class="btn btn-secondary btn-sm w-100" disabled>Tidak Tersedia</button>
+                    @endif
+                </div>
             </div>
         </div>
     @empty

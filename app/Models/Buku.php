@@ -32,7 +32,7 @@ class Buku extends Model
 
     public function detailPeminjaman()
     {
-        return $this->hasMany(PeminjamanDetail::class);
+        return $this->hasMany(PeminjamanDetail::class, 'buku_id');
     }
 
     public function getTersediaAttribute(): int
@@ -44,5 +44,16 @@ class Buku extends Model
             ->sum('jumlah');
 
         return max(0, $this->stok - $dipinjam);
+    }
+
+    public function getSisaStokAttribute()
+    {
+        $stokTerpakai = \Illuminate\Support\Facades\DB::table('peminjaman_detail')
+            ->join('peminjaman', 'peminjaman_detail.peminjaman_id', '=', 'peminjaman.id')
+            ->where('peminjaman_detail.buku_id', $this->id)
+            ->whereIn('peminjaman.status', ['dipinjam', 'terlambat'])
+            ->sum('peminjaman_detail.jumlah') ?? 0;
+
+        return max(0, $this->stok - $stokTerpakai);
     }
 }
