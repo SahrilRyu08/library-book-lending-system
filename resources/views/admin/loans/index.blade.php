@@ -2,29 +2,29 @@
 @section('title', 'Peminjaman Aktif')
 
 @section('content')
-<div class="moco-page-title">Peminjaman Aktif</div>
-<div class="moco-page-sub">Daftar buku yang sedang dipinjam oleh anggota</div>
+    <div class="moco-page-title">Peminjaman Aktif</div>
+    <div class="moco-page-sub">Daftar buku yang sedang dipinjam oleh anggota</div>
 
-<form method="GET" action="{{ route('admin.loans.index') }}" class="d-flex gap-2 mb-3">
-    <div class="input-group" style="max-width:300px;">
+    <form method="GET" action="{{ route('admin.loans.index') }}" class="d-flex gap-2 mb-3">
+        <div class="input-group" style="max-width:300px;">
         <span class="input-group-text bg-white" style="border-color:var(--moco-line);">
             <i class="bi bi-search"></i>
         </span>
-        <input type="text" name="search" value="{{ request('search') }}"
-               class="form-control moco-input" placeholder="Cari anggota / buku...">
-    </div>
-    <select name="status" class="form-select moco-input" style="max-width:180px;">
-        <option value="">Semua</option>
-        <option value="aman"     {{ request('status') == 'aman'     ? 'selected' : '' }}>Aman</option>
-        <option value="mendekati"{{ request('status') == 'mendekati' ? 'selected' : '' }}>H-3</option>
-        <option value="terlambat"{{ request('status') == 'terlambat' ? 'selected' : '' }}>Terlambat</option>
-    </select>
-    <button class="btn btn-moco-outline" type="submit">Filter</button>
-</form>
+            <input type="text" name="search" value="{{ request('search') }}"
+                   class="form-control moco-input" placeholder="Cari anggota / buku...">
+        </div>
+        <select name="status" class="form-select moco-input" style="max-width:180px;">
+            <option value="">Semua</option>
+            <option value="aman"     {{ request('status') == 'aman'     ? 'selected' : '' }}>Aman</option>
+            <option value="mendekati"{{ request('status') == 'mendekati' ? 'selected' : '' }}>H-3</option>
+            <option value="terlambat"{{ request('status') == 'terlambat' ? 'selected' : '' }}>Terlambat</option>
+        </select>
+        <button class="btn btn-moco-outline" type="submit">Filter</button>
+    </form>
 
-<div class="moco-card p-0" style="overflow:hidden;">
-    <table class="table moco-table align-middle mb-0">
-        <thead>
+    <div class="moco-card p-0" style="overflow:hidden;">
+        <table class="table moco-table align-middle mb-0">
+            <thead>
             <tr>
                 <th>Anggota</th>
                 <th>Buku</th>
@@ -34,13 +34,13 @@
                 <th>Status</th>
                 <th>Detail</th>
             </tr>
-        </thead>
-        <tbody>
+            </thead>
+            <tbody>
             @forelse($loans as $loan)
                 @php
-                    $daysLeft = \Carbon\Carbon::now()->diffInDays($loan->tanggal_kembali, false);
-                    $isLate   = $daysLeft < 0;
-                    $isNear   = $daysLeft >= 0 && $daysLeft <= 3;
+                    $daysLeft = $loan->sisa_hari;
+                    $isLate   = $loan->is_late;
+                    $isNear   = $loan->is_near_due;
                 @endphp
                 <tr>
                     <td>
@@ -49,7 +49,7 @@
                     </td>
                     <td>{{ $loan->detail->first()->buku->judul ?? '-' }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
-                    <td>{{ \Carbon\Carbon::parse($loan->tanggal_kembali)->format('d M Y') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($loan->jatuh_tempo)->format('d M Y') }}</td>
                     <td>
                         @if($isLate)
                             <span style="color:var(--moco-warn);font-weight:700;">
@@ -86,9 +86,9 @@
                     </td>
                 </tr>
             @endforelse
-        </tbody>
-    </table>
-</div>
+            </tbody>
+        </table>
+    </div>
 
-<div class="mt-3">{{ $loans->links() }}</div>
+    <div class="mt-3">{{ $loans->links() }}</div>
 @endsection

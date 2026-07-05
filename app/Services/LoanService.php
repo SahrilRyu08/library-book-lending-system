@@ -5,16 +5,20 @@ namespace App\Services;
 use App\Models\Peminjaman;
 use Carbon\Carbon;
 
+/**
+ * Kontrak untuk Dev 5 (returns-reports-dashboard):
+ * - hitungDenda(Peminjaman $p): int
+ * - tandaiTerlambat(): int  (jumlah baris yang diupdate)
+ *
+ * Dipakai oleh: scheduler, reminder jatuh tempo, notifikasi
+ * keterlambatan, dan laporan denda.
+ */
 class LoanService
 {
     /**
-     * Hitung denda untuk satu transaksi peminjaman.
-     *
-     * Aturan:
-     * - Kalau belum jatuh tempo (atau tepat waktu), denda = 0.
-     * - Kalau telat, denda = jumlah_hari_telat x config('library.denda_per_hari').
-     * - Referensi tanggal "sekarang" pakai tanggal_kembali kalau sudah diisi
-     *   (transaksi historis), atau now() kalau belum (transaksi masih berjalan).
+     * Hitung estimasi denda untuk satu peminjaman berdasarkan jatuh_tempo.
+     * - Belum terlambat -> 0
+     * - Terlambat -> jumlah hari terlambat x denda_per_hari
      */
     public function hitungDenda(Peminjaman $peminjaman): int
     {
@@ -22,57 +26,30 @@ class LoanService
             return 0;
         }
 
-        $acuanTanggal = $peminjaman->tanggal_kembali
-            ? Carbon::parse($peminjaman->tanggal_kembali)
-            : now();
+        $today      = Carbon::now()->startOfDay();
+        $jatuhTempo = Carbon::parse($peminjaman->jatuh_tempo)->startOfDay();
 
-        $jatuhTempo = Carbon::parse($peminjaman->jatuh_tempo);
-
-        if ($acuanTanggal->lte($jatuhTempo)) {
+        if ($today->lte($jatuhTempo)) {
             return 0;
         }
 
-        $hariTelat   = $jatuhTempo->diffInDays($acuanTanggal);
-        $dendaPerHari = (int) config('library.denda_per_hari', 1000);
+        $hariTerlambat = $jatuhTempo->diffInDays($today);
+        $dendaPerHari  = (int) config('library.denda_per_hari', 1000);
 
-        return $hariTelat * $dendaPerHari;
+        return $hariTerlambat * $dendaPerHari;
     }
 
     /**
-     * Tandai semua peminjaman aktif yang sudah lewat jatuh tempo
-     * sebagai 'terlambat'. Dipanggil oleh scheduler harian.
+     * Tandai seluruh peminjaman yang statusnya masih 'dipinjam'
+     * tapi sudah lewat jatuh_tempo menjadi 'terlambat'.
+     * Cocok dipanggil dari scheduler harian.
      *
-     * Return: koleksi Peminjaman yang baru saja ditandai terlambat
-     * (dipakai buat kirim notifikasi, supaya tidak double-notif
-     * ke transaksi yang sudah lama berstatus terlambat).
+     * @return int jumlah baris yang diupdate
      */
-    public function tandaiTerlambat()
+    public function tandaiTerlambat(): int
     {
-        $query = Peminjaman::where('status', 'dipinjam')
-            ->whereNotNull('jatuh_tempo')
-            ->where('jatuh_tempo', '<', now())
-            ->whereNull('tanggal_kembali');
-
-        $items = $query->get();
-
-        Peminjaman::whereIn('id', $items->pluck('id'))
+        return Peminjaman::where('status', 'dipinjam')
+            ->whereDate('jatuh_tempo', '<', Carbon::now()->toDateString())
             ->update(['status' => 'terlambat']);
-
-        return $items;
-    }
-
-    /**
-     * Ambil peminjaman yang jatuh tempo-nya H-minus sekian hari dari
-     * sekarang, dan belum pernah dikirimi reminder (dipinjam saja,
-     * belum dikembalikan). Dipakai untuk notifikasi H-3.
-     */
-    public function ambilJatuhTempoMendekati(int $hMinus)
-    {
-        $targetTanggal = now()->addDays($hMinus)->toDateString();
-
-        return Peminjaman::whereIn('status', ['dipinjam', 'terlambat'])
-            ->whereNull('tanggal_kembali')
-            ->whereDate('jatuh_tempo', $targetTanggal)
-            ->get();
     }
 }

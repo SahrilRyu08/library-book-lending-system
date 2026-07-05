@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Buku;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanDetail;
+use App\Services\LoanService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -121,13 +122,11 @@ class LoanController extends Controller
     /**
      * Detail satu transaksi peminjaman
      */
-    public function show($id)
-    {
-        $loan = Auth::user()
-            ->peminjaman()
-            ->with('detail.buku')
-            ->findOrFail($id);
 
-        return view('member.loans.show', compact('loan'));
+    public function show(Peminjaman $loan, LoanService $loanService)
+    {
+        $estimasiDenda = $loanService->hitungDenda($loan);
+
+        return view('member.loans.show', compact('loan', 'estimasiDenda'));
     }
 }
