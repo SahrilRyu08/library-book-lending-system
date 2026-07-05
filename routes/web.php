@@ -12,7 +12,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\LoanController as AdminLoanController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\ReportController;
-
+use App\Http\Controllers\Member\CartController;
 /*
 |--------------------------------------------------------------------------
 | Auth Routes
@@ -30,6 +30,10 @@ Route::post('/logout',  [AuthController::class, 'logout'])->name('logout');
 Route::prefix('member')->name('member.')->middleware(['auth', 'role:anggota'])->group(function () {
     Route::get('/books',             [MemberBookController::class, 'index'])->name('books.index');
     Route::get('/books/{id}',        [MemberBookController::class, 'show'])->name('books.show')->where('id', '[0-9]+');
+    // Keranjang
+    Route::get('/cart',              [CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart',             [CartController::class, 'store'])->name('cart.store');
+    Route::delete('/cart/{bukuId}',  [CartController::class, 'destroy'])->name('cart.destroy');
     Route::get('/loans',             [MemberLoanController::class, 'index'])->name('loans.index');
     Route::post('/loans',            [MemberLoanController::class, 'store'])->name('loans.store');
     Route::get('/loans/history',     [MemberLoanController::class, 'history'])->name('loans.history');

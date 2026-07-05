@@ -135,6 +135,23 @@
                 </div>
             </div>
         </div>
+        {{-- Keranjang --}}
+        <a href="{{ route('member.cart.index') }}"
+        class="text-decoration-none"
+        style="color:var(--moco-text-soft);">
+            <i class="bi bi-basket fs-5"></i>
+            @php $cartCount = array_sum(session('cart', [])); @endphp
+            @if($cartCount > 0)
+                <span class="moco-bell-dot"
+                    style="background:var(--moco-blue);width:16px;height:16px;
+                            font-size:9px;display:inline-flex;align-items:center;
+                            justify-content:center;color:#fff;border-radius:50%;
+                            position:relative;top:-8px;left:-6px;">
+                    {{ $cartCount }}
+                </span>
+            @endif
+        </a>
+
         {{-- USER --}}
         <div class="dropdown">
             <button

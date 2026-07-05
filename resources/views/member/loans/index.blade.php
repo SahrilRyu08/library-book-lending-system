@@ -36,7 +36,9 @@
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_kembali)->format('d M Y') }}</td>
                     <td>
-                        @if($isLate)
+                        @if($loan->status === 'menunggu')
+                            <span class="moco-note">—</span>
+                        @elseif($isLate)
                             <span style="color:var(--moco-warn);font-weight:700;">
                                 {{ abs((int)$daysLeft) }} hari telat
                             </span>
@@ -47,7 +49,11 @@
                         @endif
                     </td>
                     <td>
-                        @if($isLate)
+                        @if($loan->status === 'menunggu')
+                            <span class="badge-moco-late">
+                                <i class="bi bi-hourglass-split"></i> Menunggu Konfirmasi
+                            </span>
+                        @elseif($isLate)
                             <span class="badge-moco-late">Terlambat</span>
                         @elseif($isNear)
                             <span class="badge-moco-late">

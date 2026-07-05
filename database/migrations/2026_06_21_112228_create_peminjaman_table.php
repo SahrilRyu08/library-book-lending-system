@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('jatuh_tempo');
             $table->date('tanggal_kembali')->nullable();
             $table->decimal('denda', 10,2)->default(0);
-            $table->enum('status',['dipinjam','selesai','terlambat'])->default('dipinjam');
+            $table->enum('status', ['menunggu', 'dipinjam', 'selesai', 'terlambat'])->default('menunggu');
             $table->timestamps();
             $table->index(['user_id', 'status']);
             $table->index(['jatuh_tempo']);

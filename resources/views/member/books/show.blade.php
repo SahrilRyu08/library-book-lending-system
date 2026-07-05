@@ -51,66 +51,61 @@
                     <i class="bi bi-check-circle-fill"></i>
                     <div>
                         <strong>Kuota peminjaman Anda: {{ $kuotaAktif }} dari {{ $maxPinjam }} buku terpakai</strong>
-                        <div class="moco-quota-bar">
+                        <div class="moco-quota-bar mt-2">
                             <div class="fill" style="width:{{ ($kuotaAktif / $maxPinjam) * 100 }}%;"></div>
                         </div>
                     </div>
                 </div>
 
-                {{-- Form Pinjam --}}
                 <div class="moco-card">
-                    <form method="POST" action="{{ route('member.loans.store') }}">
+                    <form method="POST" action="{{ route('member.cart.store') }}">
                         @csrf
-                        <input type="hidden" name="book_id" value="{{ $book->id }}">
-                        <div class="row align-items-end g-3">
-                            <div class="col-auto">
-                                <label class="moco-label">Jumlah Pinjam</label>
-                                <input type="number" name="jumlah" value="1" min="1"
-                                       max="{{ min($book->stok, $maxPinjam - $kuotaAktif) }}"
-                                       class="form-control moco-input" style="width:90px;">
-                            </div>
+                        {{-- Jumlah hardcode 1, tidak perlu input --}}
+                        <input type="hidden" name="buku_id" value="{{ $book->id }}">
+                        <input type="hidden" name="jumlah" value="1">
+                        <div class="d-flex align-items-center gap-3">
                             <div class="col">
                                 <p class="moco-note mb-0">
-                                    Sisa kuota: <strong style="color:var(--moco-blue);">{{ $maxPinjam - $kuotaAktif }} buku</strong>
+                                    Sisa kuota: <strong style="color:var(--moco-blue);">
+                                        {{ $maxPinjam - $kuotaAktif }} buku
+                                    </strong>
                                 </p>
                             </div>
-                            <div class="col-auto">
+                            <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-moco">
-                                    <i class="bi bi-bookmark-plus"></i> Pinjam
+                                    <i class="bi bi-basket-plus"></i> Tambah ke Keranjang
                                 </button>
+                                <a href="{{ route('member.cart.index') }}" class="btn btn-moco-outline">
+                                    <i class="bi bi-basket"></i> Lihat Keranjang
+                                </a>
                             </div>
                         </div>
                     </form>
                 </div>
+
             @else
-                {{-- Kuota penuh --}}
                 <div class="moco-alert moco-alert-muted mb-3">
                     <i class="bi bi-exclamation-circle"></i>
                     <div>
                         <strong>Maksimal peminjaman telah tercapai ({{ $kuotaAktif }} dari {{ $maxPinjam }} buku)</strong>
-                        <div class="moco-quota-bar">
+                        <div class="moco-quota-bar mt-2">
                             <div class="fill full" style="width:100%;"></div>
                         </div>
-                        <div class="moco-note mt-1">Kembalikan salah satu buku yang sedang dipinjam untuk bisa meminjam buku baru.</div>
+                        <div class="moco-note mt-1">
+                            Kembalikan salah satu buku yang sedang dipinjam untuk bisa meminjam buku baru.
+                        </div>
                     </div>
                 </div>
                 <div class="moco-card">
-                    <div class="row align-items-center g-3">
-                        <div class="col-auto">
-                            <label class="moco-label">Jumlah Pinjam</label>
-                            <input type="number" value="1" class="form-control moco-input" style="width:90px;" disabled>
-                        </div>
-                        <div class="col">
-                            <p class="moco-note mb-0">Anda sudah mencapai batas pinjam.</p>
-                        </div>
-                        <div class="col-auto">
-                            <button class="btn btn-moco-disabled" disabled>
-                                <i class="bi bi-bookmark-plus"></i> Pinjam
-                            </button>
-                        </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <p class="moco-note mb-0">Anda sudah mencapai batas pinjam.</p>
+                        <button class="btn btn-moco-disabled ms-auto" disabled>
+                            <i class="bi bi-basket-plus"></i> Tambah ke Keranjang
+                        </button>
                     </div>
                 </div>
             @endif
+
         @else
             <div class="moco-alert moco-alert-muted">
                 <i class="bi bi-x-circle"></i>

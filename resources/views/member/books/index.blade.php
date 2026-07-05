@@ -47,14 +47,14 @@
                 {{ $book->kategori->nama_kategori ?? '-' }}
             </div>
             <div class="mb-2">
-                @if($book->stok > 0)
-                    <span class="badge-moco-stock">Stok: {{ $book->stok }}</span>
+                @if($book->tersedia > 0)
+                    <span class="badge-moco-stock">Stok: {{ $book->tersedia }}</span>
                 @else
                     <span class="badge-moco-out">Stok Habis</span>
                 @endif
             </div>
 
-            @if($book->stok > 0)
+            @if($book->tersedia > 0)
                 <a href="{{ route('member.books.show', $book->id) }}"
                 class="btn btn-moco btn-sm w-100">Lihat Detail</a>
             @else
