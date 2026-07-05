@@ -21,12 +21,18 @@ class CheckDueLoans extends Command
 
     public function handle(LoanService $loanService): int
     {
+        $hMinus = (int) config('library.notif_h_minus', 3);
+
+        $loanIdsBaruTerlambat = Peminjaman::where('status', 'dipinjam')
+            ->whereNull('tanggal_kembali')
+            ->whereDate('jatuh_tempo', '<', Carbon::today())
+            ->pluck('id');
+
         // 1. Tandai peminjaman yang sudah lewat jatuh_tempo jadi 'terlambat'
         $jumlahTerlambat = $loanService->tandaiTerlambat();
         $this->info("Menandai {$jumlahTerlambat} peminjaman menjadi terlambat.");
 
         // 2. Reminder H-3 untuk yang masih 'dipinjam'
-        $hMinus = 3;
         $tanggalTarget = Carbon::now()->addDays($hMinus)->toDateString();
 
         $akanJatuhTempo = Peminjaman::where('status', 'dipinjam')
@@ -42,7 +48,8 @@ class CheckDueLoans extends Command
         $this->info("Mengirim {$akanJatuhTempo->count()} reminder H-{$hMinus}.");
 
         // 3. Notifikasi keterlambatan untuk yang baru saja jadi 'terlambat'
-        $terlambat = Peminjaman::where('status', 'terlambat')
+        $terlambat = Peminjaman::whereIn('id', $loanIdsBaruTerlambat)
+            ->where('status', 'terlambat')
             ->with(['user', 'detail.buku'])
             ->get();
 

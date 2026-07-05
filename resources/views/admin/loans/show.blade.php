@@ -14,16 +14,19 @@
     @php
         $maxPinjam   = config('library.max_buku_per_pinjam', 3);
         $activeLoans = \App\Models\Peminjaman::where('user_id', $loan->user_id)
-            ->whereIn('status', ['menunggu', 'dipinjam'])
+            ->whereNull('tanggal_kembali')
+            ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
             ->with('detail')
             ->get()
             ->sum(fn ($p) => $p->detail->sum('jumlah'));
 
         $isMenunggu = $loan->status === 'menunggu';
+        $isTerlambat = $loan->status === 'terlambat';
         $daysLeft   = $loan->sisa_hari;
         $isLate     = $loan->is_late;
         $isNear     = $loan->is_near_due;
         $denda      = app(\App\Services\LoanService::class)->hitungDenda($loan);
+        $quotaPercent = min(100, ($activeLoans / max($maxPinjam, 1)) * 100);
     @endphp
 
     <div class="row g-4">
@@ -38,11 +41,11 @@
                 <div class="moco-note mb-3">{{ $loan->user->email ?? '-' }}</div>
                 <div class="moco-eyebrow mb-2">Kuota Pinjam</div>
                 <div style="font-size:13.5px;">
-                    Sedang meminjam/mengajukan <strong>{{ $activeLoans }}</strong>
+                    Total buku aktif anggota ini <strong>{{ $activeLoans }}</strong>
                     dari maks <strong>{{ $maxPinjam }}</strong> buku
                 </div>
                 <div class="moco-quota-bar mt-2" style="max-width:100%;">
-                    <div class="fill" style="width:{{ min(100, ($activeLoans / max($maxPinjam, 1)) * 100) }}%;"></div>
+                    <div class="fill" style="width:{{ $quotaPercent }}%;"></div>
                 </div>
             </div>
         </div>
@@ -70,11 +73,11 @@
                             <span class="badge-moco-active">
                             <i class="bi bi-hourglass-split"></i> Menunggu Konfirmasi
                         </span>
-                        @elseif($isLate)
+                        @elseif($isTerlambat || $isLate)
                             <span class="badge-moco-late">Terlambat {{ abs((int)$daysLeft) }} hari</span>
                         @elseif($isNear)
                             <span class="badge-moco-late"><i class="bi bi-bell"></i> Jatuh tempo H-{{ (int)$daysLeft }}</span>
-                        @elseif($loan->status === 'selesai')
+                        @elseif($loan->tanggal_kembali !== null)
                             <span class="badge-moco-done">Selesai</span>
                         @else
                             <span class="badge-moco-active">Dipinjam — {{ (int)$daysLeft }} hari lagi</span>
@@ -83,7 +86,7 @@
                     <div class="col-6">
                         <div class="moco-note mb-1">Estimasi Denda</div>
                         <div style="font-weight:600;color:var(--moco-warn);">
-                            Rp {{ number_format($denda, 0, ',', '.') }}
+                            Rp {{ number_format((float) ($loan->tanggal_kembali ? $loan->denda : $denda), 0, ',', '.') }}
                         </div>
                     </div>
                 </div>

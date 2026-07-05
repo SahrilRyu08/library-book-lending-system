@@ -57,7 +57,7 @@ class LoanController extends Controller
     {
         $loan = Peminjaman::with(['user', 'detail.buku'])->findOrFail($id);
 
-        $isDone = $loan->status === 'selesai';
+        $isDone = $loan->tanggal_kembali !== null;
 
         return view('admin.loans.show', compact('loan', 'isDone'));
     }
@@ -68,7 +68,7 @@ class LoanController extends Controller
         $loan->update([
             'status' => 'dipinjam',
             'tanggal_pinjam' => now(),
-            'jatuh_tempo' => now()->addDays(config('library.lama_peminjaman', 7)),
+            'jatuh_tempo' => now()->addDays(config('library.max_hari_pinjam', 7)),
         ]);
 
         if ($loan->user) {

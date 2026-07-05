@@ -77,7 +77,7 @@
                     {{ $jumlahTerlambat }}
                 </div>
                 <div class="stat-lbl">
-                    Terlambat
+                    Terlambat Aktif
                 </div>
             </div>
         </div>
@@ -113,6 +113,11 @@
                     </td>
                     <td>
                         @switch($loan->status)
+                            @case('menunggu')
+                                <span class="badge bg-secondary">
+                                Menunggu
+                            </span>
+                                @break
                             @case('dipinjam')
                                 <span class="badge bg-primary">
                                 Dipinjam

@@ -42,13 +42,19 @@ class BookController extends Controller
      */
     public function show($id)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         $book = Buku::with('kategori')->findOrFail($id);
 
         // Hitung berapa buku yang sedang dipinjam user ini
-        $kuotaAktif = Auth::user()
+        $kuotaAktif = $user
             ->peminjaman()
-            ->whereIn('status', ['menunggu', 'dipinjam'])
-            ->count();
+            ->whereNull('tanggal_kembali')
+            ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
+            ->with('detail')
+            ->get()
+            ->sum(fn ($loan) => $loan->detail->sum('jumlah'));
 
         $maxPinjam = config('library.max_buku_per_pinjam', 3);
 

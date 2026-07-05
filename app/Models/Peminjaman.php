@@ -87,7 +87,8 @@ class Peminjaman extends Model
      */
     public function scopeAktif(Builder $query): Builder
     {
-        return $query->whereIn('status', ['dipinjam', 'terlambat']);
+        return $query->whereNull('tanggal_kembali')
+            ->whereIn('status', ['dipinjam', 'terlambat']);
     }
 
     /**

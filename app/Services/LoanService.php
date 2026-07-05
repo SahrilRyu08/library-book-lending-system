@@ -18,7 +18,7 @@ class LoanService
     /**
      * Hitung estimasi denda untuk satu peminjaman berdasarkan jatuh_tempo.
      * - Belum terlambat -> 0
-     * - Terlambat -> jumlah hari terlambat x denda_per_hari
+     * - Terlambat -> jumlah hari terlambat x tarif_denda_per_hari
      */
     public function hitungDenda(Peminjaman $peminjaman): int
     {
@@ -38,7 +38,7 @@ class LoanService
 
         $hariTerlambat = $jatuhTempo->diffInDays($tanggalAcuan);
 
-        return $hariTerlambat * config('library.denda_per_hari', 1000);
+        return $hariTerlambat * config('library.tarif_denda_per_hari', 1000);
     }
 
     /**

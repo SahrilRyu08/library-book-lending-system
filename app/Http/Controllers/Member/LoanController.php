@@ -19,15 +19,19 @@ class LoanController extends Controller
      */
     public function index()
     {
-        $aktifLoans = Auth::user()
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $aktifLoans = $user
             ->peminjaman()
             ->with('detail.buku')
+            ->whereNull('tanggal_kembali')
             ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
             ->latest()
             ->get();
 
         $maxPinjam  = config('library.max_buku_per_pinjam', 3);
-        $aktif      = $aktifLoans->count();
+        $aktif      = $aktifLoans->sum(fn ($loan) => $loan->detail->sum('jumlah'));
 
         return view('member.loans.index', compact('aktifLoans', 'aktif', 'maxPinjam'));
     }
@@ -38,6 +42,9 @@ class LoanController extends Controller
      */
     public function store(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         $cart      = session('cart', []);
         $maxPinjam = config('library.max_buku_per_pinjam', 3);
 
@@ -48,10 +55,13 @@ class LoanController extends Controller
         }
 
         // Hitung kuota aktif
-        $kuotaAktif = Auth::user()
+        $kuotaAktif = $user
             ->peminjaman()
-            ->whereIn('status', ['menunggu', 'dipinjam'])
-            ->count();
+            ->whereNull('tanggal_kembali')
+            ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
+            ->with('detail')
+            ->get()
+            ->sum(fn ($loan) => $loan->detail->sum('jumlah'));
 
         if (($kuotaAktif + count($cart)) > $maxPinjam) {
             return redirect()->route('member.cart.index')
@@ -109,7 +119,10 @@ class LoanController extends Controller
      */
     public function history()
     {
-        $historyLoans = Auth::user()
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $historyLoans = $user
             ->peminjaman()
             ->with('detail.buku')
             ->latest()

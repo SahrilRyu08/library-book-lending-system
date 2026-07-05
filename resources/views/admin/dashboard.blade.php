@@ -16,13 +16,15 @@
     <div class="col-md-3">
         <div class="moco-stat-card">
             <div class="stat-num">{{ $activeLoan }}</div>
-            <div class="stat-lbl">Sedang Dipinjam</div>
+            <div class="stat-lbl">Peminjaman Aktif</div>
+            <div class="moco-note mt-1">Menunggu + dipinjam</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="moco-stat-card">
             <div class="stat-num" style="color:var(--moco-warn);">{{ $lateLoan }}</div>
-            <div class="stat-lbl">Terlambat</div>
+            <div class="stat-lbl">Terlambat Aktif</div>
+            <div class="moco-note mt-1">Belum dikembalikan</div>
         </div>
     </div>
     <div class="col-md-3">
@@ -30,6 +32,14 @@
             <div class="stat-num">{{ $memberCount }}</div>
             <div class="stat-lbl">Anggota</div>
         </div>
+    </div>
+</div>
+
+<div class="moco-alert moco-alert-info mb-4">
+    <i class="bi bi-info-circle"></i>
+    <div>
+        Status aktif admin: <strong>{{ $pendingLoan }}</strong> menunggu, <strong>{{ $borrowedLoan }}</strong> dipinjam,
+        dan <strong>{{ $lateLoan }}</strong> terlambat belum dikembalikan.
     </div>
 </div>
 

@@ -41,7 +41,8 @@ class Buku extends Model
             ->whereHas('peminjaman', function ($query) {
                 // Stok berkurang sejak status menunggu
                 // bukan hanya saat sudah dikonfirmasi (dipinjam)
-                $query->whereIn('status', ['menunggu', 'dipinjam']);
+                $query->whereNull('tanggal_kembali')
+                    ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat']);
             })
             ->sum('jumlah');
 

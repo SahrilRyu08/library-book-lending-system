@@ -13,6 +13,7 @@
 
     @php
         $isMenunggu = $loan->status === 'menunggu';
+        $isTerlambat = $loan->status === 'terlambat';
         $daysLeft   = $loan->sisa_hari;
         $isLate     = $loan->is_late;
         $isNear     = $loan->is_near_due;
@@ -38,11 +39,11 @@
                     <span class="badge-moco-active">
                     <i class="bi bi-hourglass-split"></i> Menunggu Konfirmasi Admin
                 </span>
-                @elseif($isLate)
+                @elseif($isTerlambat || $isLate)
                     <span class="badge-moco-late">Terlambat {{ abs((int)$daysLeft) }} hari</span>
                 @elseif($isNear)
                     <span class="badge-moco-late"><i class="bi bi-bell"></i> H-{{ (int)$daysLeft }}</span>
-                @elseif($loan->status === 'selesai')
+                @elseif($loan->tanggal_kembali !== null)
                     <span class="badge-moco-done">Selesai</span>
                 @else
                     <span class="badge-moco-active">Dipinjam — {{ (int)$daysLeft }} hari lagi</span>

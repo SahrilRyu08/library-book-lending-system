@@ -14,7 +14,7 @@ class NotificationPeminjamanSeeder extends Seeder
     public function run(): void
     {
         $loanService = app(LoanService::class);
-        $lamaPeminjaman = (int) config('library.lama_peminjaman', 7);
+        $lamaPeminjaman = (int) config('library.max_hari_pinjam', 7);
         $hMinus = (int) config('library.notif_h_minus', 3);
 
         $anggota = User::where('role', 'anggota')->take(5)->get();

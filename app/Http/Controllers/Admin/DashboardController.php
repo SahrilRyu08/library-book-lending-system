@@ -16,10 +16,20 @@ class DashboardController extends Controller
         // Statistik Dashboard
         $bookCount = Buku::count();
 
-        $activeLoan = Peminjaman::whereIn('status', ['menunggu', 'dipinjam'])
+        $pendingLoan = Peminjaman::whereNull('tanggal_kembali')
+            ->where('status', 'menunggu')
             ->count();
 
-        $lateLoan = Peminjaman::where('status', 'terlambat')
+        $borrowedLoan = Peminjaman::whereNull('tanggal_kembali')
+            ->where('status', 'dipinjam')
+            ->count();
+
+        $activeLoan = Peminjaman::whereNull('tanggal_kembali')
+            ->whereIn('status', ['menunggu', 'dipinjam'])
+            ->count();
+
+        $lateLoan = Peminjaman::whereNull('tanggal_kembali')
+            ->where('status', 'terlambat')
             ->count();
 
         $memberCount = User::where('role', 'anggota')
@@ -50,6 +60,8 @@ class DashboardController extends Controller
             'bookCount',
             'lateLoan',
             'activeLoan',
+            'pendingLoan',
+            'borrowedLoan',
             'memberCount',
             'popularBooks'
         ));

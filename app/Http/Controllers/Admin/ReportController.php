@@ -37,6 +37,7 @@ class ReportController extends Controller
 
         // Hitung transaksi yang saat ini statusnya 'terlambat'
         $jumlahTerlambat = (clone $query)
+            ->whereNull('tanggal_kembali')
             ->where('status', 'terlambat')
             ->count();
 

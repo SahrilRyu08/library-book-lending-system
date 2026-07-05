@@ -7,6 +7,7 @@ use App\Models\Peminjaman;
 use App\Notifications\KeterlambatanNotification;
 use App\Notifications\PengembalianNotification;
 use App\Services\LoanService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -25,10 +26,22 @@ class ReturnController extends Controller
             'user',
             'detail.buku',
         ])
+            ->whereNull('tanggal_kembali')
             ->whereIn('status', ['dipinjam', 'terlambat']);
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'terlambat') {
+                $query->where(function ($q) {
+                    $q->where('status', 'terlambat')
+                        ->orWhere(function ($lateQuery) {
+                            $lateQuery->where('status', 'dipinjam')
+                                ->whereDate('jatuh_tempo', '<', Carbon::today());
+                        });
+                });
+            } elseif ($request->status === 'tepat') {
+                $query->where('status', 'dipinjam')
+                    ->whereDate('jatuh_tempo', '>=', Carbon::today());
+            }
         }
 
         if ($request->filled('member')) {
@@ -80,7 +93,7 @@ class ReturnController extends Controller
             $isTerlambat = $denda > 0;
 
             $loan->denda  = $denda;
-            $loan->status = 'selesai';
+            $loan->status = $isTerlambat ? 'terlambat' : 'selesai';
             $loan->save();
 
             foreach ($loan->detail as $detail) {
