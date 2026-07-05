@@ -22,11 +22,11 @@
 
         $isMenunggu = $loan->status === 'menunggu';
         $isTerlambat = $loan->status === 'terlambat';
+        $isDitolak = $loan->status === 'ditolak';
         $daysLeft   = $loan->sisa_hari;
         $isLate     = $loan->is_late;
         $isNear     = $loan->is_near_due;
         $denda      = app(\App\Services\LoanService::class)->hitungDenda($loan);
-        $quotaPercent = min(100, ($activeLoans / max($maxPinjam, 1)) * 100);
     @endphp
 
     <div class="row g-4">
@@ -45,7 +45,11 @@
                     dari maks <strong>{{ $maxPinjam }}</strong> buku
                 </div>
                 <div class="moco-quota-bar mt-2" style="max-width:100%;">
-                    <div class="fill" style="width:{{ $quotaPercent }}%;"></div>
+                    @if($activeLoans > 0)
+                        <div class="fill full" style="width:100%;"></div>
+                    @else
+                        <div class="fill" style="width:0%;"></div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -73,6 +77,8 @@
                             <span class="badge-moco-active">
                             <i class="bi bi-hourglass-split"></i> Menunggu Konfirmasi
                         </span>
+                        @elseif($isDitolak)
+                            <span class="badge bg-dark">Ditolak</span>
                         @elseif($isTerlambat || $isLate)
                             <span class="badge-moco-late">Terlambat {{ abs((int)$daysLeft) }} hari</span>
                         @elseif($isNear)
@@ -126,7 +132,16 @@
                                 <i class="bi bi-check-circle"></i> Konfirmasi Peminjaman
                             </button>
                         </form>
-                    @elseif(!$isDone)
+                        <form method="POST" action="{{ route('admin.loans.reject', $loan->id) }}" id="rejectLoanForm">
+                            @csrf
+                            <button type="button" class="btn btn-outline-danger"
+                                    onclick="showConfirmModal('Tolak Peminjaman', 'Tolak pengajuan peminjaman ini?', function() {
+                                        document.getElementById('rejectLoanForm').submit();
+                                    })">
+                                <i class="bi bi-x-circle"></i> Tolak Peminjaman
+                            </button>
+                        </form>
+                    @elseif(!$isDone && in_array($loan->status, ['dipinjam', 'terlambat'], true))
                         <form method="POST" action="{{ route('admin.returns.store') }}" id="returnLoanForm">
                             @csrf
                             <input type="hidden" name="loan_id" value="{{ $loan->id }}">

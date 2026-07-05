@@ -14,7 +14,7 @@ class CartController extends Controller
 {
     /**
      * Ambil isi keranjang dari session
-     * Format: [buku_id => jumlah, ...]
+     * Format: [buku_id => 1]
      */
     private function getCart(): array
     {
@@ -65,29 +65,57 @@ class CartController extends Controller
 
         $request->validate([
             'buku_id' => ['required', 'integer', 'exists:buku,id'],
-            'jumlah'  => ['nullable', 'integer', 'min:1'],
         ]);
 
         $buku      = Buku::findOrFail($request->buku_id);
-        $jumlah    = (int) $request->input('jumlah', 1);
         $maxPinjam = config('library.max_buku_per_pinjam', 3);
         $cart      = $this->getCart();
-        $jumlahSaatIni = (int) ($cart[$request->buku_id] ?? 0);
+        $kuotaAktif = $user
+            ->peminjaman()
+            ->whereNull('tanggal_kembali')
+            ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
+            ->with('detail.buku')
+            ->get();
 
-        // Hitung total slot yang sudah terpakai
-        $totalDiKeranjang = array_sum($cart);
-        $kuotaAktif       = $user
+        $kuotaAktif = $kuotaAktif->sum(fn ($loan) => $loan->detail->sum('jumlah'));
+        $activeBookIds = $user
             ->peminjaman()
             ->whereNull('tanggal_kembali')
             ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
             ->with('detail')
             ->get()
-            ->sum(fn ($loan) => $loan->detail->sum('jumlah'));
+            ->flatMap(fn ($loan) => $loan->detail->pluck('buku_id'))
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $activeBookTitles = $user
+            ->peminjaman()
+            ->whereNull('tanggal_kembali')
+            ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
+            ->with('detail.buku')
+            ->get()
+            ->flatMap(fn ($loan) => $loan->detail->pluck('buku.judul'))
+            ->filter()
+            ->values()
+            ->all();
+        $cartBookIds = array_map('intval', array_keys($cart));
+        $cartBookTitles = Buku::whereIn('id', $cartBookIds)
+            ->pluck('judul')
+            ->filter()
+            ->values()
+            ->all();
 
-        // Cek kuota
-        if (($kuotaAktif + $totalDiKeranjang + $jumlah) > $maxPinjam) {
+        if (
+            in_array($buku->id, $activeBookIds, true)
+            || in_array($buku->judul, $activeBookTitles, true)
+            || in_array($buku->id, $cartBookIds, true)
+            || in_array($buku->judul, $cartBookTitles, true)
+        ) {
+            return back()->with('error', 'User tidak bisa meminjam buku dengan ID atau judul yang sama.');
+        }
+
+        if (($kuotaAktif + count($cart)) >= $maxPinjam) {
             return back()->with('error',
-                'Kuota penuh. Maksimal ' . $maxPinjam . ' buku aktif per anggota.'
+                'Maksimal peminjaman adalah 3 buku berbeda per user.'
             );
         }
 
@@ -96,68 +124,10 @@ class CartController extends Controller
             return back()->with('error', 'Stok buku "' . $buku->judul . '" sedang tidak tersedia.');
         }
 
-        if (($jumlahSaatIni + $jumlah) > $buku->tersedia) {
-            return back()->with('error',
-                'Jumlah "' . $buku->judul . '" di keranjang melebihi stok tersedia.'
-            );
-        }
-
-        // Tambah/increment jumlah buku di keranjang
-        $cart[$request->buku_id] = $jumlahSaatIni + $jumlah;
+        $cart[$request->buku_id] = 1;
         $this->saveCart($cart);
 
-        return back()->with(
-            'success',
-            '"' . $buku->judul . '" berhasil ditambahkan ke keranjang sejumlah ' . $jumlah . ' buku.'
-        );
-    }
-
-    /**
-     * Ubah jumlah buku pada keranjang
-     */
-    public function update(Request $request, $bukuId)
-    {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
-        $request->validate([
-            'jumlah' => ['required', 'integer', 'min:1'],
-        ]);
-
-        $cart = $this->getCart();
-
-        if (!isset($cart[$bukuId])) {
-            return back()->with('error', 'Buku tidak ditemukan di keranjang.');
-        }
-
-        $buku      = Buku::findOrFail($bukuId);
-        $jumlah    = (int) $request->input('jumlah');
-        $maxPinjam = config('library.max_buku_per_pinjam', 3);
-        $totalLain = array_sum($cart) - (int) $cart[$bukuId];
-        $kuotaAktif = $user
-            ->peminjaman()
-            ->whereNull('tanggal_kembali')
-            ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
-            ->with('detail')
-            ->get()
-            ->sum(fn ($loan) => $loan->detail->sum('jumlah'));
-
-        if (($kuotaAktif + $totalLain + $jumlah) > $maxPinjam) {
-            return back()->with('error',
-                'Kuota penuh. Maksimal ' . $maxPinjam . ' buku aktif per anggota.'
-            );
-        }
-
-        if ($jumlah > $buku->tersedia) {
-            return back()->with('error',
-                'Jumlah "' . $buku->judul . '" melebihi stok tersedia.'
-            );
-        }
-
-        $cart[$bukuId] = $jumlah;
-        $this->saveCart($cart);
-
-        return back()->with('success', 'Jumlah buku di keranjang berhasil diperbarui.');
+        return back()->with('success', '"' . $buku->judul . '" berhasil ditambahkan ke keranjang.');
     }
 
     /**

@@ -55,15 +55,15 @@ class LoanController extends Controller
         }
 
         // Hitung kuota aktif
-        $kuotaAktif = $user
+        $activeLoans = $user
             ->peminjaman()
             ->whereNull('tanggal_kembali')
             ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
-            ->with('detail')
-            ->get()
-            ->sum(fn ($loan) => $loan->detail->sum('jumlah'));
+            ->with('detail.buku')
+            ->get();
+        $kuotaAktif = $activeLoans->sum(fn ($loan) => $loan->detail->sum('jumlah'));
 
-        if (($kuotaAktif + array_sum($cart)) > $maxPinjam) {
+        if (($kuotaAktif + count($cart)) > $maxPinjam) {
             return redirect()->route('member.cart.index')
                 ->with('error', 'Kuota peminjaman tidak mencukupi.');
         }
@@ -71,6 +71,27 @@ class LoanController extends Controller
         DB::beginTransaction();
         try {
             $jatuhTempo = now()->addDays(config('library.max_hari_pinjam', 7));
+
+            $activeBookIds = $activeLoans
+                ->flatMap(fn ($loan) => $loan->detail->pluck('buku_id'))
+                ->map(fn ($id) => (int) $id)
+                ->all();
+            $activeBookTitles = $activeLoans
+                ->flatMap(fn ($loan) => $loan->detail->pluck('buku.judul'))
+                ->filter()
+                ->values()
+                ->all();
+            $judulDiKeranjang = Buku::whereIn('id', array_keys($cart))
+                ->pluck('judul')
+                ->filter()
+                ->values()
+                ->all();
+
+            if (count($judulDiKeranjang) !== count(array_unique($judulDiKeranjang))) {
+                DB::rollBack();
+                return redirect()->route('member.cart.index')
+                    ->with('error', 'Keranjang berisi judul buku yang sama. Gunakan buku yang berbeda.');
+            }
 
             // Buat 1 header peminjaman
             $peminjaman = Peminjaman::create([
@@ -86,16 +107,25 @@ class LoanController extends Controller
                 $buku = Buku::findOrFail($bukuId);
 
                 // Validasi stok sekali lagi sebelum simpan
-                if ($buku->tersedia < $jumlah) {
+                if ($buku->tersedia < 1) {
                     DB::rollBack();
                     return redirect()->route('member.cart.index')
                         ->with('error', 'Stok "' . $buku->judul . '" tidak mencukupi saat pengajuan.');
                 }
 
+                if (
+                    in_array((int) $bukuId, $activeBookIds, true)
+                    || in_array($buku->judul, $activeBookTitles, true)
+                ) {
+                    DB::rollBack();
+                    return redirect()->route('member.cart.index')
+                        ->with('error', 'User tidak bisa meminjam buku dengan ID atau judul yang sama.');
+                }
+
                 PeminjamanDetail::create([
                     'peminjaman_id' => $peminjaman->id,
                     'buku_id'       => $bukuId,
-                    'jumlah'        => $jumlah,
+                    'jumlah'        => 1,
                 ]);
             }
 

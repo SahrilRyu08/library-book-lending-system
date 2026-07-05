@@ -12,7 +12,7 @@ class LoanController extends Controller
     public function index(Request $request)
     {
         $query = Peminjaman::with(['user', 'detail.buku'])
-            ->whereNull('tanggal_kembali');
+            ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -65,6 +65,11 @@ class LoanController extends Controller
     public function confirm($id)
     {
         $loan = Peminjaman::with(['user', 'detail.buku'])->findOrFail($id);
+
+        if ($loan->status !== 'menunggu') {
+            return back()->with('error', 'Hanya pengajuan menunggu yang bisa dikonfirmasi.');
+        }
+
         $loan->update([
             'status' => 'dipinjam',
             'tanggal_pinjam' => now(),
@@ -76,5 +81,20 @@ class LoanController extends Controller
         }
 
         return back()->with('success', 'Peminjaman berhasil dikonfirmasi.');
+    }
+
+    public function reject($id)
+    {
+        $loan = Peminjaman::with(['user', 'detail.buku'])->findOrFail($id);
+
+        if ($loan->status !== 'menunggu') {
+            return back()->with('error', 'Hanya pengajuan menunggu yang bisa ditolak.');
+        }
+
+        $loan->update([
+            'status' => 'ditolak',
+        ]);
+
+        return back()->with('success', 'Pengajuan peminjaman berhasil ditolak.');
     }
 }

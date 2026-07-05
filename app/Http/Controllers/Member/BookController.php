@@ -48,30 +48,45 @@ class BookController extends Controller
         $book = Buku::with('kategori')->findOrFail($id);
         $cart = session('cart', []);
 
-        // Hitung berapa buku yang sedang dipinjam user ini
-        $kuotaAktif = $user
+        $activeLoans = $user
             ->peminjaman()
             ->whereNull('tanggal_kembali')
             ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
-            ->with('detail')
-            ->get()
-            ->sum(fn ($loan) => $loan->detail->sum('jumlah'));
+            ->with('detail.buku')
+            ->get();
 
+        $kuotaAktif = $activeLoans->sum(fn ($loan) => $loan->detail->sum('jumlah'));
         $maxPinjam = config('library.max_buku_per_pinjam', 3);
-        $jumlahDiKeranjang = array_sum($cart);
-        $jumlahBukuIniDiKeranjang = (int) ($cart[$book->id] ?? 0);
-        $sisaKuota = max(0, $maxPinjam - $kuotaAktif - $jumlahDiKeranjang);
-        $stokBisaDitambah = max(0, $book->tersedia - $jumlahBukuIniDiKeranjang);
-        $maxTambah = min($sisaKuota, $stokBisaDitambah);
+        $cartBookIds = array_map('intval', array_keys($cart));
+        $cartBookTitles = Buku::whereIn('id', $cartBookIds)
+            ->pluck('judul')
+            ->filter()
+            ->values()
+            ->all();
+        $bookInCart = isset($cart[$book->id]);
+        $titleInCart = in_array($book->judul, $cartBookTitles, true);
+        $sudahMengajukanBukuSama = $activeLoans
+            ->flatMap(fn ($loan) => $loan->detail)
+            ->contains(function ($detail) use ($book) {
+                return (int) $detail->buku_id === (int) $book->id
+                    || $detail->buku?->judul === $book->judul;
+            });
+
+        $bisaPinjam = $book->tersedia > 0
+            && $kuotaAktif < $maxPinjam
+            && count($cart) < $maxPinjam
+            && !$bookInCart
+            && !$titleInCart
+            && !$sudahMengajukanBukuSama;
 
         return view('member.books.show', compact(
             'book',
             'kuotaAktif',
             'maxPinjam',
-            'jumlahDiKeranjang',
-            'jumlahBukuIniDiKeranjang',
-            'sisaKuota',
-            'maxTambah'
+            'bookInCart',
+            'titleInCart',
+            'sudahMengajukanBukuSama',
+            'bisaPinjam'
         ));
     }
 }

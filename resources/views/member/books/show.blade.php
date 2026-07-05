@@ -2,10 +2,6 @@
 @section('title', $book->judul)
 
 @section('content')
-@php
-    $quotaUsed = $kuotaAktif + $jumlahDiKeranjang;
-    $quotaPercent = ($quotaUsed / max($maxPinjam, 1)) * 100;
-@endphp
 <a href="{{ route('member.books.index') }}"
    class="d-inline-flex align-items-center gap-1 moco-note text-decoration-none mb-3"
    style="color:var(--moco-blue);">
@@ -50,13 +46,17 @@
 
         {{-- Quota Info --}}
         @if($book->tersedia > 0)
-            @if($maxTambah > 0)
+            @if($bisaPinjam)
                 <div class="moco-alert moco-alert-info mb-3">
                     <i class="bi bi-check-circle-fill"></i>
                     <div>
-                        <strong>Kuota peminjaman Anda: {{ $quotaUsed }} dari {{ $maxPinjam }} buku terpakai</strong>
+                        <strong>Kuota peminjaman Anda: {{ $kuotaAktif }} dari {{ $maxPinjam }} buku terpakai</strong>
                         <div class="moco-quota-bar mt-2">
-                            <div class="fill" style="width:{{ $quotaPercent }}%;"></div>
+                            @if($kuotaAktif > 0)
+                                <div class="fill full" style="width:100%;"></div>
+                            @else
+                                <div class="fill" style="width:0%;"></div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -65,29 +65,13 @@
                     <form method="POST" action="{{ route('member.cart.store') }}">
                         @csrf
                         <input type="hidden" name="buku_id" value="{{ $book->id }}">
-                        <div class="d-flex align-items-end gap-3 flex-wrap">
+                        <div class="d-flex align-items-center gap-3">
                             <div class="col">
                                 <p class="moco-note mb-0">
                                     Sisa kuota: <strong style="color:var(--moco-blue);">
-                                        {{ $sisaKuota }} buku
+                                        {{ max($maxPinjam - $kuotaAktif, 0) }} buku
                                     </strong>
                                 </p>
-                                @if($jumlahBukuIniDiKeranjang > 0)
-                                    <p class="moco-note mt-1 mb-0">
-                                        Sudah ada <strong>{{ $jumlahBukuIniDiKeranjang }}</strong> buku ini di keranjang
-                                    </p>
-                                @endif
-                            </div>
-                            <div style="width:140px;">
-                                <label for="jumlah" class="moco-label">Jumlah</label>
-                                <input type="number"
-                                       id="jumlah"
-                                       name="jumlah"
-                                       class="form-control moco-input"
-                                       value="1"
-                                       min="1"
-                                       max="{{ $maxTambah }}">
-                                <div class="moco-note mt-1">Maks tambah {{ $maxTambah }}</div>
                             </div>
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-moco">
@@ -105,18 +89,26 @@
                 <div class="moco-alert moco-alert-muted mb-3">
                     <i class="bi bi-exclamation-circle"></i>
                     <div>
-                        <strong>Maksimal peminjaman telah tercapai ({{ $quotaUsed }} dari {{ $maxPinjam }} buku)</strong>
+                        <strong>Peminjaman tidak tersedia untuk buku ini</strong>
                         <div class="moco-quota-bar mt-2">
                             <div class="fill full" style="width:100%;"></div>
                         </div>
                         <div class="moco-note mt-1">
-                            Kuota penuh atau jumlah buku ini di keranjang sudah mencapai batas stok/kuota.
+                            @if($sudahMengajukanBukuSama)
+                                Kamu sudah mengajukan atau sedang meminjam buku yang sama.
+                            @elseif($bookInCart || $titleInCart)
+                                Buku ini sudah ada di keranjang.
+                            @elseif(count(session('cart', [])) >= $maxPinjam || $kuotaAktif >= $maxPinjam)
+                                Maksimal peminjaman adalah 3 buku berbeda per user.
+                            @else
+                                Buku ini sedang tidak tersedia.
+                            @endif
                         </div>
                     </div>
                 </div>
                 <div class="moco-card">
                     <div class="d-flex align-items-center gap-3">
-                        <p class="moco-note mb-0">Anda sudah mencapai batas pinjam.</p>
+                        <p class="moco-note mb-0">Pengajuan buku ini tidak bisa dilakukan.</p>
                         <button class="btn btn-moco-disabled ms-auto" disabled>
                             <i class="bi bi-basket-plus"></i> Tambah ke Keranjang
                         </button>

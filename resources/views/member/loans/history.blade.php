@@ -23,14 +23,19 @@
                     $isDipinjam = $loan->status === 'dipinjam';
                     $isTerlambat = $loan->status === 'terlambat';
                     $isSelesai = $loan->status === 'selesai';
+                    $isDitolak = $loan->status === 'ditolak';
                 @endphp
                 <tr>
                     <td><strong>{{ $loan->detail->first()->buku->judul ?? '-' }}</strong></td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
                     <td>
-                        {{ $loan->tanggal_kembali
-                            ? \Carbon\Carbon::parse($loan->tanggal_kembali)->format('d M Y')
-                            : 'Belum dikembalikan' }}
+                        @if($isDitolak)
+                            Ditolak admin
+                        @else
+                            {{ $loan->tanggal_kembali
+                                ? \Carbon\Carbon::parse($loan->tanggal_kembali)->format('d M Y')
+                                : 'Belum dikembalikan' }}
+                        @endif
                     </td>
                     <td>
                         @if($loan->denda > 0)
@@ -44,6 +49,8 @@
                     <td>
                         @if($isMenunggu)
                             <span class="badge-moco-active">Menunggu Konfirmasi</span>
+                        @elseif($isDitolak)
+                            <span class="badge bg-dark">Ditolak</span>
                         @elseif($isDipinjam)
                             <span class="badge-moco-active">Dipinjam</span>
                         @elseif($isTerlambat)

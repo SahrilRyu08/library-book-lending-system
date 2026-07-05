@@ -128,6 +128,11 @@
                                 Terlambat
                             </span>
                                 @break
+                            @case('ditolak')
+                                <span class="badge bg-dark">
+                                Ditolak
+                            </span>
+                                @break
                             @default
                                 <span class="badge bg-success">
                                 Selesai
