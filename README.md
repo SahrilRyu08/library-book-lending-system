@@ -12,6 +12,8 @@ composer install
 
 cp .env.example .env
 
+QUEUE_CONNECTION=sync
+
 php artisan key:generate
 
 php artisan migrate:fresh --seed
@@ -19,6 +21,8 @@ php artisan migrate:fresh --seed
 php artisan storage:link
 
 php artisan serve
+
+
 
 ## Login
 
@@ -31,3 +35,5 @@ Member
 
 member@mail.com
 password
+
+
