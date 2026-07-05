@@ -38,7 +38,20 @@
             @forelse($returns as $loan)
                 <tr>
                     <td>{{ $loan->user->nama ?? '-' }}</td>
-                    <td>{{ $loan->detail->first()->buku->judul ?? '-' }}</td>
+                    <td>
+                        @if($loan->detail->isNotEmpty())
+                            <div style="font-weight:600;">
+                                {{ $loan->detail->first()->buku->judul ?? '-' }}
+                            </div>
+                            @if($loan->detail->count() > 1)
+                                <div class="moco-note">
+                                    +{{ $loan->detail->count() - 1 }} buku lainnya
+                                </div>
+                            @endif
+                        @else
+                            -
+                        @endif
+                    </td>
                     <td>{{ Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
                     <td>
                         @switch($loan->status)

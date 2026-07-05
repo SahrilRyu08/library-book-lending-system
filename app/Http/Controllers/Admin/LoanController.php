@@ -12,7 +12,8 @@ class LoanController extends Controller
     public function index(Request $request)
     {
         $query = Peminjaman::with(['user', 'detail.buku'])
-            ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat']);
+            ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
+            ->whereNull('tanggal_kembali'); // <-- tambahan: pastikan yang sudah dikembalikan tidak ikut
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -32,20 +33,10 @@ class LoanController extends Controller
                 ->whereDate('jatuh_tempo', '<', $today);
         } elseif ($request->status === 'mendekati') {
             $query->where('status', 'dipinjam')
-                ->whereBetween(
-                    'jatuh_tempo',
-                    [
-                        $today,
-                        Carbon::today()->addDays(3)
-                    ]
-                );
+                ->whereBetween('jatuh_tempo', [$today, Carbon::today()->addDays(3)]);
         } elseif ($request->status === 'aman') {
             $query->where('status', 'dipinjam')
-                ->whereDate(
-                    'jatuh_tempo',
-                    '>',
-                    Carbon::today()->addDays(3)
-                );
+                ->whereDate('jatuh_tempo', '>', Carbon::today()->addDays(3));
         }
 
         $loans = $query->orderBy('jatuh_tempo')->paginate(10)->withQueryString();

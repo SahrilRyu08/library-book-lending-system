@@ -44,12 +44,15 @@
                     Total buku aktif anggota ini <strong>{{ $activeLoans }}</strong>
                     dari maks <strong>{{ $maxPinjam }}</strong> buku
                 </div>
+                @php
+                    $quotaPercent = $maxPinjam > 0
+                        ? min(100, ($activeLoans / $maxPinjam) * 100)
+                        : 0;
+                    $isQuotaFull = $activeLoans >= $maxPinjam;
+                @endphp
+
                 <div class="moco-quota-bar mt-2" style="max-width:100%;">
-                    @if($activeLoans > 0)
-                        <div class="fill full" style="width:100%;"></div>
-                    @else
-                        <div class="fill" style="width:0%;"></div>
-                    @endif
+                    <div class="fill {{ $isQuotaFull ? 'full' : '' }}" style="width:{{ $quotaPercent }}%;"></div>
                 </div>
             </div>
         </div>

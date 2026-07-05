@@ -64,7 +64,20 @@
                         <div style="font-weight:600;">{{ $loan->user->nama ?? '-' }}</div>
                         <div class="moco-note">{{ $loan->user->email ?? '' }}</div>
                     </td>
-                    <td>{{ $loan->detail->first()->buku->judul ?? '-' }}</td>
+                    <td>
+                        @if($loan->detail->isNotEmpty())
+                            <div style="font-weight:600;">
+                                {{ $loan->detail->first()->buku->judul ?? '-' }}
+                            </div>
+                            @if($loan->detail->count() > 1)
+                                <div class="moco-note">
+                                    +{{ $loan->detail->count() - 1 }} buku lainnya
+                                </div>
+                            @endif
+                        @else
+                            -
+                        @endif
+                    </td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
                     <td>{{ \Carbon\Carbon::parse($loan->jatuh_tempo)->format('d M Y') }}</td>
                     <td>
