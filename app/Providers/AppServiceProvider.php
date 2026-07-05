@@ -21,30 +21,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        View::composer('layouts.app', function ($view) {
-
-            if (!Auth::check()) {
-
-                $view->with([
-                    'notifications' => collect(),
-                    'unreadNotifCount' => 0,
-                ]);
-
-                return;
+        View::composer(['layouts.app', 'layouts.admin'], function ($view) {
+            if (auth()->check()) {
+                $view->with(
+                    'notifications',
+                    // Cuma 3 terbaru buat dropdown panel di navbar.
+                    // Daftar lengkap tetap ada di halaman "Lihat Semua"
+                    // (member.notifications.index / admin.notifications.index)
+                    // yang di-paginate 10 per halaman.
+                    auth()->user()->notifications()->latest()->take(3)->get()
+                );
+                $view->with(
+                    'unreadNotifCount',
+                    auth()->user()->unreadNotifications()->count()
+                );
+            } else {
+                $view->with('notifications', collect());
+                $view->with('unreadNotifCount', 0);
             }
-
-            $user = Auth::user();
-
-            $view->with([
-                'notifications' => $user->notifications()
-                    ->latest()
-                    ->take(5)
-                    ->get(),
-
-                'unreadNotifCount' => $user
-                    ->unreadNotifications()
-                    ->count(),
-            ]);
         });
     }
 }
