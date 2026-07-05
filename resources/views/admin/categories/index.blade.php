@@ -28,9 +28,12 @@
                     <i class="bi bi-pencil"></i>
                 </button>
                 <form method="POST" action="{{ route('admin.categories.destroy', $cat->id) }}"
-                    onsubmit="return confirm('Hapus kategori ini?')">
+                    id="deleteCategoryFormOld-{{ $cat->id }}">
                     @csrf @method('DELETE')
-                    <button class="btn btn-sm btn-moco-outline" type="submit" style="color:var(--moco-text-faint);">
+                    <button class="btn btn-sm btn-moco-outline" type="button" style="color:var(--moco-text-faint);"
+                            onclick="showConfirmModal('Hapus Kategori', 'Hapus kategori ini?', function() {
+                                document.getElementById('deleteCategoryFormOld-{{ $cat->id }}').submit();
+                            })">
                         <i class="bi bi-trash"></i>
                     </button>
                 </form>
@@ -65,9 +68,12 @@
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <form method="POST" action="{{ route('admin.categories.destroy', $cat->id) }}" class="d-inline"
-                                onsubmit="return confirm('Hapus kategori ini?')">
+                                id="deleteCategoryForm-{{ $cat->id }}">
                                 @csrf @method('DELETE')
-                                <button class="btn btn-sm btn-moco-outline" type="submit" style="color:var(--moco-text-faint);">
+                                <button class="btn btn-sm btn-moco-outline" type="button" style="color:var(--moco-text-faint);"
+                                        onclick="showConfirmModal('Hapus Kategori', 'Hapus kategori ini?', function() {
+                                            document.getElementById('deleteCategoryForm-{{ $cat->id }}').submit();
+                                        })">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </form>

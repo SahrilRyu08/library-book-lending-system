@@ -3,9 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @property int $id
+ * @property string $nama
+ * @property string $email
+ * @property string $password
+ * @property string $role
+ * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Peminjaman[] $peminjaman
+ */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
@@ -42,7 +54,7 @@ class User extends Authenticatable
     /**
      * Relasi: satu user bisa memiliki banyak peminjaman
      */
-    public function peminjaman()
+    public function peminjaman(): HasMany
     {
         return $this->hasMany(Peminjaman::class);
     }

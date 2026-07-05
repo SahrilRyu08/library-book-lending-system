@@ -22,7 +22,7 @@ class LoanController extends Controller
         $aktifLoans = Auth::user()
             ->peminjaman()
             ->with('detail.buku')
-            ->whereIn('status', ['menunggu', 'dipinjam'])
+            ->whereIn('status', ['menunggu', 'dipinjam', 'terlambat'])
             ->latest()
             ->get();
 
@@ -112,7 +112,6 @@ class LoanController extends Controller
         $historyLoans = Auth::user()
             ->peminjaman()
             ->with('detail.buku')
-            ->whereIn('status', ['selesai', 'terlambat'])
             ->latest()
             ->paginate(10);
 

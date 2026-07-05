@@ -11,7 +11,8 @@ class LoanController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Peminjaman::with(['user', 'detail.buku']);
+        $query = Peminjaman::with(['user', 'detail.buku'])
+            ->whereNull('tanggal_kembali');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -22,21 +23,29 @@ class LoanController extends Controller
             });
         }
 
-        $today = Carbon::now()->toDateString();
+        $today = Carbon::today();
 
-        if ($request->status === 'terlambat') {
-            $query->where(function ($q) use ($today) {
-                $q->where('status', 'terlambat')
-                    ->orWhere(function ($q2) use ($today) {
-                        $q2->where('status', 'dipinjam')->whereDate('jatuh_tempo', '<', $today);
-                    });
-            });
+        if ($request->status === 'menunggu') {
+            $query->where('status', 'menunggu');
+        } elseif ($request->status === 'terlambat') {
+            $query->whereIn('status', ['dipinjam', 'terlambat'])
+                ->whereDate('jatuh_tempo', '<', $today);
         } elseif ($request->status === 'mendekati') {
             $query->where('status', 'dipinjam')
-                ->whereBetween('jatuh_tempo', [$today, Carbon::now()->addDays(3)->toDateString()]);
+                ->whereBetween(
+                    'jatuh_tempo',
+                    [
+                        $today,
+                        Carbon::today()->addDays(3)
+                    ]
+                );
         } elseif ($request->status === 'aman') {
             $query->where('status', 'dipinjam')
-                ->whereDate('jatuh_tempo', '>', Carbon::now()->addDays(3)->toDateString());
+                ->whereDate(
+                    'jatuh_tempo',
+                    '>',
+                    Carbon::today()->addDays(3)
+                );
         }
 
         $loans = $query->orderBy('jatuh_tempo')->paginate(10)->withQueryString();
@@ -56,7 +65,11 @@ class LoanController extends Controller
     public function confirm($id)
     {
         $loan = Peminjaman::with(['user', 'detail.buku'])->findOrFail($id);
-        $loan->update(['status' => 'dipinjam']);
+        $loan->update([
+            'status' => 'dipinjam',
+            'tanggal_pinjam' => now(),
+            'jatuh_tempo' => now()->addDays(config('library.lama_peminjaman', 7)),
+        ]);
 
         if ($loan->user) {
             $loan->user->notify(new \App\Notifications\PeminjamanDikonfirmasiNotification($loan));

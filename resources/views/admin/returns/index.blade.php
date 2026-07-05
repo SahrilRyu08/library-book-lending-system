@@ -69,11 +69,13 @@
                         @endif
                     </td>
                     <td>
-                        <form method="POST" action="{{ route('admin.returns.store') }}">
+                        <form method="POST" action="{{ route('admin.returns.store') }}" id="returnForm-{{ $loan->id }}">
                             @csrf
                             <input type="hidden" name="loan_id" value="{{ $loan->id }}">
-                            <button type="submit" class="btn btn-sm btn-moco"
-                                    onclick="return confirm('Konfirmasi pengembalian buku ini?')">
+                            <button type="button" class="btn btn-sm btn-moco"
+                                    onclick="showConfirmModal('Konfirmasi Pengembalian', 'Konfirmasi pengembalian buku ini?', function() {
+                                        document.getElementById('returnForm-{{ $loan->id }}').submit();
+                                    })">
                                 Kembalikan
                             </button>
                         </form>

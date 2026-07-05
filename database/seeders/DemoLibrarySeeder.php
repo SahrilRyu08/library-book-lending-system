@@ -24,31 +24,29 @@ class   DemoLibrarySeeder extends Seeder
             */
 
             User::create([
-                'nama' => 'Administrator',
-                'email' => 'admin@library.test',
+                'nama' => 'Admin MOCO',
+                'email' => 'admin@moco.app',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
             ]);
 
             $members = collect();
 
-            for ($i = 1; $i <= 15; $i++) {
+            $newUsersData = [
+                ['nama' => 'Sahril', 'email' => 'sahril@moco.app'],
+                ['nama' => 'Zhavira', 'email' => 'zhavira@moco.app'],
+                ['nama' => 'David', 'email' => 'david@moco.app'],
+                ['nama' => 'Adid', 'email' => 'adid@moco.app'],
+            ];
 
-                $members->push(
-
-                    User::create([
-
-                        'nama' => "Anggota $i",
-
-                        'email' => "anggota$i@test.com",
-
-                        'password' => Hash::make('password'),
-
-                        'role' => 'anggota',
-
-                    ])
-
-                );
+            foreach ($newUsersData as $userData) {
+                $newUser = User::create([
+                    'nama' => $userData['nama'],
+                    'email' => $userData['email'],
+                    'password' => Hash::make('password'),
+                    'role' => 'anggota',
+                ]);
+                $members->push($newUser);
             }
 
             /*
@@ -255,137 +253,78 @@ class   DemoLibrarySeeder extends Seeder
             |--------------------------------------------------------------------------
             */
 
-            foreach (range(1, 40) as $i) {
-
-                $status = collect([
-                    'dipinjam',
-                    'dipinjam',
-                    'dipinjam',
-                    'terlambat',
-                    'selesai',
-                    'selesai',
-                ])->random();
-
-                $tanggalPinjam = now()->subDays(rand(5, 30));
-
-                $jatuhTempo = (clone $tanggalPinjam)->addDays(7);
-
+            // Create exactly 2 terlambat loans
+            for ($i = 0; $i < 2; $i++) {
+                $status = 'terlambat';
+                $jatuhTempo = now()->subDays(rand(1, 10));
+                $tanggalPinjam = (clone $jatuhTempo)->subDays(7);
                 $tanggalKembali = null;
-
-                $denda = 0;
-
-                /*
-                |--------------------------------------------------------------------------
-                | STATUS SELESAI
-                |--------------------------------------------------------------------------
-                */
-
-                if ($status == 'selesai') {
-
-                    $tanggalKembali = (clone $jatuhTempo)
-                        ->addDays(rand(-2, 2));
-
-                    if ($tanggalKembali->gt($jatuhTempo)) {
-
-                        $hari = $tanggalKembali
-                            ->diffInDays($jatuhTempo);
-
-                        $denda = $hari * 5000;
-
-                    }
-
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | STATUS TERLAMBAT
-                |--------------------------------------------------------------------------
-                */
-
-                if ($status == 'terlambat') {
-
-                    $jatuhTempo = now()->subDays(rand(1, 10));
-
-                    $denda = now()
-                            ->diffInDays($jatuhTempo) * 5000;
-
-                }
+                $denda = now()->diffInDays($jatuhTempo) * 5000;
 
                 $loan = Peminjaman::create([
-
-                    'user_id' => $members->random()->id,
-
+                    'user_id' => $members[$i]->id,
                     'tanggal_pinjam' => $tanggalPinjam,
-
                     'jatuh_tempo' => $jatuhTempo,
-
                     'tanggal_kembali' => $tanggalKembali,
-
                     'status' => $status,
-
                     'denda' => $denda,
-
                 ]);
 
-                /*
-                |--------------------------------------------------------------------------
-                | DETAIL PEMINJAMAN
-                |--------------------------------------------------------------------------
-                */
-
-                $jumlahBuku = rand(1, 3);
-
-                $selectedBooks = $bookCollection->random(
-                    min(
-                        $jumlahBuku,
-                        $bookCollection->count()
-                    )
-                );
-
-                foreach ($selectedBooks as $book) {
-
-                    PeminjamanDetail::create([
-
-                        'peminjaman_id' => $loan->id,
-
-                        'buku_id' => $book->id,
-
-                        'jumlah' => 1,
-
-                    ]);
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | KURANGI STOK
-                    |--------------------------------------------------------------------------
-                    */
-
-                    if (
-                        in_array(
-                            $status,
-                            [
-                                'dipinjam',
-                                'terlambat'
-                            ]
-                        )
-                    ) {
-
-                        if ($book->stok > 0) {
-
-                            $book->decrement(
-                                'stok',
-                                1
-                            );
-
-                            $book->refresh();
-
-                        }
-
-                    }
-
+                $selectedBook = $bookCollection[$i];
+                PeminjamanDetail::create([
+                    'peminjaman_id' => $loan->id,
+                    'buku_id' => $selectedBook->id,
+                    'jumlah' => 1,
+                ]);
+                if ($selectedBook->stok > 0) {
+                    $selectedBook->decrement('stok', 1);
+                    $selectedBook->refresh();
                 }
-
             }
+
+            // Create exactly 2 sedang dipinjam loans
+            for ($i = 2; $i < 4; $i++) {
+                $status = 'dipinjam';
+                $tanggalPinjam = now()->subDays(rand(1, 3));
+                $jatuhTempo = (clone $tanggalPinjam)->addDays(7);
+                $tanggalKembali = null;
+                $denda = 0;
+
+                $loan = Peminjaman::create([
+                    'user_id' => $members[$i]->id,
+                    'tanggal_pinjam' => $tanggalPinjam,
+                    'jatuh_tempo' => $jatuhTempo,
+                    'tanggal_kembali' => $tanggalKembali,
+                    'status' => $status,
+                    'denda' => $denda,
+                ]);
+
+                $selectedBook = $bookCollection[$i];
+                PeminjamanDetail::create([
+                    'peminjaman_id' => $loan->id,
+                    'buku_id' => $selectedBook->id,
+                    'jumlah' => 1,
+                ]);
+                if ($selectedBook->stok > 0) {
+                    $selectedBook->decrement('stok', 1);
+                    $selectedBook->refresh();
+                }
+            }
+
+            // Create a selesai loan for one member for history
+            $selesaiLoan = Peminjaman::create([
+                'user_id' => $members[0]->id,
+                'tanggal_pinjam' => now()->subDays(14),
+                'jatuh_tempo' => now()->subDays(7),
+                'tanggal_kembali' => now()->subDays(5),
+                'status' => 'selesai',
+                'denda' => 0,
+            ]);
+            PeminjamanDetail::create([
+                'peminjaman_id' => $selesaiLoan->id,
+                'buku_id' => $bookCollection[4]->id,
+                'jumlah' => 1,
+            ]);
 
         });
 

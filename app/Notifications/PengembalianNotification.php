@@ -45,7 +45,7 @@ class PengembalianNotification extends Notification implements ShouldQueue
 
     public function toArray(object $notifiable): array
     {
-        $judulBuku = $this->peminjaman->details
+        $judulBuku = $this->peminjaman->detail
             ->pluck('buku.judul')
             ->filter()
             ->implode(', ');

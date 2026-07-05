@@ -357,6 +357,43 @@
 
 </script>
 
+{{-- Reusable Confirm Modal --}}
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:14px;border:1px solid var(--moco-line);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-600" id="confirmModalTitle">Konfirmasi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalBody" class="moco-note"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-moco-outline" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-moco" id="confirmModalConfirmBtn">Ya</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let confirmCallback = null;
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    function showConfirmModal(title, body, callback) {
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalBody').textContent = body;
+        confirmCallback = callback;
+        confirmModal.show();
+    }
+    document.getElementById('confirmModalConfirmBtn').addEventListener('click', function() {
+        if (confirmCallback) {
+            confirmCallback();
+            confirmCallback = null;
+        }
+        confirmModal.hide();
+    });
+</script>
+
 @stack('scripts')
 
 </body>

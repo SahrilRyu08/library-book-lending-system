@@ -114,19 +114,23 @@
                 {{-- Aksi --}}
                 <div class="mt-3 d-flex gap-2">
                     @if($isMenunggu)
-                        <form method="POST" action="{{ route('admin.loans.confirm', $loan->id) }}">
+                        <form method="POST" action="{{ route('admin.loans.confirm', $loan->id) }}" id="confirmLoanForm">
                             @csrf
-                            <button type="submit" class="btn btn-moco"
-                                    onclick="return confirm('Konfirmasi peminjaman ini?')">
+                            <button type="button" class="btn btn-moco"
+                                    onclick="showConfirmModal('Konfirmasi Peminjaman', 'Konfirmasi peminjaman ini?', function() {
+                                        document.getElementById('confirmLoanForm').submit();
+                                    })">
                                 <i class="bi bi-check-circle"></i> Konfirmasi Peminjaman
                             </button>
                         </form>
                     @elseif(!$isDone)
-                        <form method="POST" action="{{ route('admin.returns.store') }}">
+                        <form method="POST" action="{{ route('admin.returns.store') }}" id="returnLoanForm">
                             @csrf
                             <input type="hidden" name="loan_id" value="{{ $loan->id }}">
-                            <button type="submit" class="btn btn-moco"
-                                    onclick="return confirm('Proses pengembalian buku ini?')">
+                            <button type="button" class="btn btn-moco"
+                                    onclick="showConfirmModal('Proses Pengembalian', 'Proses pengembalian buku ini?', function() {
+                                        document.getElementById('returnLoanForm').submit();
+                                    })">
                                 <i class="bi bi-arrow-return-left"></i> Proses Pengembalian
                             </button>
                         </form>

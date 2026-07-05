@@ -16,13 +16,13 @@ class DashboardController extends Controller
         // Statistik Dashboard
         $bookCount = Buku::count();
 
-        $activeLoan = Peminjaman::where('status', 'dipinjam')
+        $activeLoan = Peminjaman::whereIn('status', ['menunggu', 'dipinjam'])
             ->count();
 
         $lateLoan = Peminjaman::where('status', 'terlambat')
             ->count();
 
-        $memberCount = User::where('role', 'member')
+        $memberCount = User::where('role', 'anggota')
             ->count();
 
         // Buku Terpopuler

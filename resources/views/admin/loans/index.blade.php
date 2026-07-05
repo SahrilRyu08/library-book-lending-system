@@ -1,3 +1,4 @@
+@php use Carbon\Carbon; @endphp
 @extends('layouts.admin')
 @section('title', 'Peminjaman Aktif')
 
@@ -40,9 +41,23 @@
             @forelse($loans as $loan)
                 @php
                     $isMenunggu = $loan->status === 'menunggu';
-                    $daysLeft   = $loan->sisa_hari;
-                    $isLate     = $loan->is_late;
-                    $isNear     = $loan->is_near_due;
+                    $isDone = $loan->tanggal_kembali !== null;
+                    $isLate = $loan->is_late;
+                    $isNear = $loan->is_near_due;
+
+                    $today = Carbon::today();
+                    $dueDate = Carbon::parse($loan->jatuh_tempo)->startOfDay();
+
+                    if ($today->gt($dueDate)) {
+                        $daysLeft = $today->diffInDays($dueDate);
+                        $isLate = true;
+                    } else {
+                        $daysLeft = $today->diffInDays($dueDate);
+                        $isLate = false;
+                    }
+
+                    $hMinus = (int) config('library.notif_h_minus', 3);
+                    $isNear = !$isLate && $daysLeft === $hMinus;
                 @endphp
                 <tr>
                     <td>
@@ -56,28 +71,46 @@
                         @if($isMenunggu)
                             <span class="moco-note">-</span>
                         @elseif($isLate)
-                            <span style="color:var(--moco-warn);font-weight:700;">
-                                {{ abs((int)$daysLeft) }} hari telat
-                            </span>
+                            <span class="text-danger fw-bold">
+                                {{ $daysLeft }} hari telat
+                             </span>
                         @else
-                            <span style="color:var(--moco-blue);font-weight:600;">
-                                {{ (int)$daysLeft }} hari lagi
+                            <span class="text-primary fw-semibold">
+                                {{ $daysLeft }} hari lagi
                             </span>
                         @endif
                     </td>
                     <td>
                         @if($isMenunggu)
-                            <span class="badge-moco-active">
-                                <i class="bi bi-hourglass-split"></i> Menunggu Konfirmasi
-                            </span>
+
+                            <span class="badge bg-secondary">
+            Menunggu
+        </span>
+
+                        @elseif($isDone)
+
+                            <span class="badge bg-success">
+            Selesai
+        </span>
+
                         @elseif($isLate)
-                            <span class="badge-moco-late">Terlambat</span>
-                        @elseif($isNear)
+
                             <span class="badge-moco-late">
-                                <i class="bi bi-bell"></i> H-{{ (int)$daysLeft }}
-                            </span>
+            Terlambat
+        </span>
+
+                        @elseif($isNear)
+
+                            <span class="badge bg-warning text-dark">
+            H-3
+        </span>
+
                         @else
-                            <span class="badge-moco-active">Dipinjam</span>
+
+                            <span class="badge-moco-active">
+            Dipinjam
+        </span>
+
                         @endif
                     </td>
                     <td>

@@ -26,17 +26,19 @@ class LoanService
             return 0;
         }
 
-        $today      = Carbon::now()->startOfDay();
+        $tanggalAcuan = $peminjaman->tanggal_kembali
+            ? Carbon::parse($peminjaman->tanggal_kembali)->startOfDay()
+            : Carbon::today();
+
         $jatuhTempo = Carbon::parse($peminjaman->jatuh_tempo)->startOfDay();
 
-        if ($today->lte($jatuhTempo)) {
+        if ($tanggalAcuan->lte($jatuhTempo)) {
             return 0;
         }
 
-        $hariTerlambat = $jatuhTempo->diffInDays($today);
-        $dendaPerHari  = (int) config('library.denda_per_hari', 1000);
+        $hariTerlambat = $jatuhTempo->diffInDays($tanggalAcuan);
 
-        return $hariTerlambat * $dendaPerHari;
+        return $hariTerlambat * config('library.denda_per_hari', 1000);
     }
 
     /**
@@ -49,7 +51,10 @@ class LoanService
     public function tandaiTerlambat(): int
     {
         return Peminjaman::where('status', 'dipinjam')
-            ->whereDate('jatuh_tempo', '<', Carbon::now()->toDateString())
-            ->update(['status' => 'terlambat']);
+            ->whereNull('tanggal_kembali')
+            ->whereDate('jatuh_tempo', '<', Carbon::today())
+            ->update([
+                'status' => 'terlambat'
+            ]);
     }
 }

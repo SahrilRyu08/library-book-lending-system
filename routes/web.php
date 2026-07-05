@@ -37,7 +37,7 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:anggota'])->
     Route::get('/loans',             [MemberLoanController::class, 'index'])->name('loans.index');
     Route::post('/loans',            [MemberLoanController::class, 'store'])->name('loans.store');
     Route::get('/loans/history',     [MemberLoanController::class, 'history'])->name('loans.history');
-    Route::get('/loans/{id}',        [MemberLoanController::class, 'show'])->name('loans.show')->where('id', '[0-9]+');
+    Route::get('/loans/{loan}',        [MemberLoanController::class, 'show'])->name('loans.show')->where('loan', '[0-9]+');
     Route::get('/notifications',            [MemberNotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [MemberNotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('/notifications/read-all',  [MemberNotificationController::class, 'markAllRead'])->name('notifications.readAll');

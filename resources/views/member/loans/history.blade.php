@@ -3,7 +3,7 @@
 
 @section('content')
     <div class="moco-page-title">Riwayat Peminjaman</div>
-    <div class="moco-page-sub">Semua buku yang pernah / sedang telat kamu pinjam</div>
+    <div class="moco-page-sub">Semua buku yang kamu pinjam atau pernah pinjam</div>
 
     <div class="moco-card p-0" style="overflow:hidden;">
         <table class="table moco-table mb-0">
@@ -18,6 +18,12 @@
             </thead>
             <tbody>
             @forelse($historyLoans as $loan)
+                @php
+                    $isMenunggu = $loan->status === 'menunggu';
+                    $isDipinjam = $loan->status === 'dipinjam';
+                    $isTerlambat = $loan->status === 'terlambat';
+                    $isSelesai = $loan->status === 'selesai';
+                @endphp
                 <tr>
                     <td><strong>{{ $loan->detail->first()->buku->judul ?? '-' }}</strong></td>
                     <td>{{ \Carbon\Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
@@ -36,14 +42,16 @@
                         @endif
                     </td>
                     <td>
-                        {{-- 'terlambat' = masih dipinjam tapi lewat jatuh tempo (belum dikembalikan) --}}
-                        {{-- 'selesai' dengan denda > 0 = sudah dikembalikan tapi telat --}}
-                        @if($loan->status === 'terlambat')
-                            <span class="badge-moco-late">Masih Terlambat</span>
-                        @elseif($loan->denda > 0)
+                        @if($isMenunggu)
+                            <span class="badge-moco-active">Menunggu Konfirmasi</span>
+                        @elseif($isDipinjam)
+                            <span class="badge-moco-active">Dipinjam</span>
+                        @elseif($isTerlambat)
+                            <span class="badge-moco-late">Terlambat</span>
+                        @elseif($isSelesai && $loan->denda > 0)
                             <span class="badge-moco-late">Dikembalikan Terlambat</span>
                         @else
-                            <span class="badge-moco-done">Tepat Waktu</span>
+                            <span class="badge-moco-done">Selesai</span>
                         @endif
                     </td>
                 </tr>

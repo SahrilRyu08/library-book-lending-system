@@ -60,9 +60,12 @@
                                 <i class="bi bi-pencil"></i>
                             </a>
                             <form method="POST" action="{{ route('admin.books.destroy', $book->id) }}" class="d-inline"
-                                onsubmit="return confirm('Hapus buku ini?')">
+                                id="deleteBookForm-{{ $book->id }}">
                                 @csrf @method('DELETE')
-                                <button class="btn btn-sm btn-moco-outline" type="submit" style="color:var(--moco-text-faint);">
+                                <button class="btn btn-sm btn-moco-outline" type="button" style="color:var(--moco-text-faint);"
+                                        onclick="showConfirmModal('Hapus Buku', 'Hapus buku ini?', function() {
+                                            document.getElementById('deleteBookForm-{{ $book->id }}').submit();
+                                        })">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </form>

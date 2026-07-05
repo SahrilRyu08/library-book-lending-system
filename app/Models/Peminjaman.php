@@ -6,8 +6,25 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property \Illuminate\Support\Carbon $tanggal_pinjam
+ * @property \Illuminate\Support\Carbon $jatuh_tempo
+ * @property \Illuminate\Support\Carbon|null $tanggal_kembali
+ * @property string $status
+ * @property float $denda
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\User $user
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\PeminjamanDetail[] $detail
+ * @property-read int $sisa_hari
+ * @property-read bool $is_late
+ * @property-read bool $is_near_due
+ */
 class Peminjaman extends Model
 {
     use HasFactory;
@@ -42,7 +59,7 @@ class Peminjaman extends Model
     /**
      * Relasi: peminjaman belongs to satu user (anggota)
      */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
@@ -96,18 +113,22 @@ class Peminjaman extends Model
             return 0;
         }
 
-        return (int) Carbon::now()->startOfDay()
-            ->diffInDays(Carbon::parse($this->jatuh_tempo)->startOfDay(), false);
+        return Carbon::today()->diffInDays(
+            $this->jatuh_tempo,
+            false
+        );
     }
 
     public function getIsLateAttribute(): bool
     {
-        return $this->status === 'terlambat'
-            || ($this->status === 'dipinjam' && $this->sisa_hari < 0);
+        return $this->tanggal_kembali === null
+            && $this->sisa_hari < 0;
     }
 
     public function getIsNearDueAttribute(): bool
     {
-        return $this->status === 'dipinjam' && $this->sisa_hari >= 0 && $this->sisa_hari <= 3;
+        return $this->tanggal_kembali === null
+            && $this->sisa_hari >= 0
+            && $this->sisa_hari <= config('library.notif_h_minus', 3);
     }
 }

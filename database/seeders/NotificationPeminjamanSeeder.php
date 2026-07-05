@@ -15,42 +15,37 @@ class NotificationPeminjamanSeeder extends Seeder
     {
         $loanService = app(LoanService::class);
         $lamaPeminjaman = (int) config('library.lama_peminjaman', 7);
+        $hMinus = (int) config('library.notif_h_minus', 3);
 
-        $anggota = User::where('role', 'anggota')->get();
-        $bukus   = Buku::all();
+        $anggota = User::where('role', 'anggota')->take(5)->get();
+        $bukus = Buku::take(6)->get();
 
-        if ($anggota->isEmpty() || $bukus->isEmpty()) {
-            $this->command->warn('Jalankan UserSeeder & BukuSeeder dulu sebelum PeminjamanSeeder.');
+        if ($anggota->count() < 5 || $bukus->count() < 6) {
+            $this->command->warn('Minimal dibutuhkan 5 anggota dan 6 buku.');
             return;
         }
 
-        // -----------------------------------------------------------
-        // 1. Selesai TEPAT WAKTU (status: selesai, denda: 0)
-        // -----------------------------------------------------------
+        // 1. Selesai tepat waktu
         $this->buatPeminjaman(
             user: $anggota[0],
             buku: $bukus[0],
             tanggalPinjam: now()->subDays(10),
             jatuhTempo: now()->subDays(10)->addDays($lamaPeminjaman),
-            tanggalKembali: now()->subDays(5), // dikembalikan sebelum jatuh tempo
+            tanggalKembali: now()->subDays(5),
             loanService: $loanService
         );
 
-        // -----------------------------------------------------------
-        // 2. Selesai TELAT (status: selesai, denda dihitung LoanService)
-        // -----------------------------------------------------------
+        // 2. Selesai terlambat
         $this->buatPeminjaman(
             user: $anggota[1],
             buku: $bukus[1],
             tanggalPinjam: now()->subDays(15),
             jatuhTempo: now()->subDays(15)->addDays($lamaPeminjaman),
-            tanggalKembali: now()->subDays(1), // dikembalikan telat beberapa hari
+            tanggalKembali: now()->subDays(1),
             loanService: $loanService
         );
 
-        // -----------------------------------------------------------
-        // 3. Masih DIPINJAM, belum jatuh tempo (status: dipinjam)
-        // -----------------------------------------------------------
+        // 3. Masih dipinjam
         $this->buatPeminjaman(
             user: $anggota[2],
             buku: $bukus[2],
@@ -60,24 +55,19 @@ class NotificationPeminjamanSeeder extends Seeder
             loanService: $loanService
         );
 
-        // -----------------------------------------------------------
-        // 4. Sudah lewat jatuh tempo tapi BELUM ditandai terlambat
-        //    (skenario buat testing `php artisan loans:check-due`)
-        // -----------------------------------------------------------
+        // 4. Lewat jatuh tempo tetapi masih status dipinjam
+        // (untuk testing scheduler loans:check-due)
         $this->buatPeminjaman(
             user: $anggota[3],
             buku: $bukus[3],
             tanggalPinjam: now()->subDays($lamaPeminjaman + 5),
-            jatuhTempo: now()->subDays(5), // sudah lewat 5 hari
+            jatuhTempo: now()->subDays(5),
             tanggalKembali: null,
-            loanService: $loanService
+            loanService: $loanService,
+            statusManual: 'dipinjam'
         );
 
-        // -----------------------------------------------------------
-        // 5. Jatuh tempo persis H-3 dari sekarang
-        //    (skenario buat testing notifikasi reminder H-3)
-        // -----------------------------------------------------------
-        $hMinus = (int) config('library.notif_h_minus', 3);
+        // 5. H-3 jatuh tempo
         $this->buatPeminjaman(
             user: $anggota[4],
             buku: $bukus[4],
@@ -87,27 +77,20 @@ class NotificationPeminjamanSeeder extends Seeder
             loanService: $loanService
         );
 
-        // -----------------------------------------------------------
-        // 6. Sudah berstatus 'terlambat' (hasil scheduler kemarin),
-        //    belum dikembalikan sama sekali
-        // -----------------------------------------------------------
+        // 6. Sudah terlambat
         $this->buatPeminjaman(
             user: $anggota[0],
             buku: $bukus[5],
             tanggalPinjam: now()->subDays($lamaPeminjaman + 10),
             jatuhTempo: now()->subDays(10),
             tanggalKembali: null,
-            loanService: $loanService
+            loanService: $loanService,
+            statusManual: 'terlambat'
         );
 
-        $this->command->info('PeminjamanSeeder selesai: 6 skenario transaksi dibuat.');
+        $this->command->info('NotificationPeminjamanSeeder berhasil membuat 6 skenario peminjaman.');
     }
 
-    /**
-     * Helper: buat satu Peminjaman + PeminjamanDetail + hitung denda
-     * pakai LoanService (bukan hardcode manual), supaya data seed
-     * konsisten dengan logic aplikasi yang sebenarnya.
-     */
     protected function buatPeminjaman(
         User $user,
         Buku $buku,
@@ -118,40 +101,35 @@ class NotificationPeminjamanSeeder extends Seeder
         ?string $statusManual = null
     ): Peminjaman {
         $peminjaman = Peminjaman::create([
-            'user_id'        => $user->id,
+            'user_id' => $user->id,
             'tanggal_pinjam' => $tanggalPinjam,
-            'jatuh_tempo'    => $jatuhTempo,
-            'tanggal_kembali'=> $tanggalKembali,
-            'status'         => 'dipinjam', // sementara, diupdate di bawah
-            'denda'          => 0,
+            'jatuh_tempo' => $jatuhTempo,
+            'tanggal_kembali' => $tanggalKembali,
+            'status' => 'dipinjam',
+            'denda' => 0,
         ]);
 
         PeminjamanDetail::create([
             'peminjaman_id' => $peminjaman->id,
-            'buku_id'       => $buku->id,
-            'jumlah'        => 1,
+            'buku_id' => $buku->id,
+            'jumlah' => 1,
         ]);
 
+        // Sesuaikan dengan nama relasi pada model
         $peminjaman->load('detail.buku');
 
-        if ($statusManual) {
-            // Skenario khusus: status dipaksa manual (belum diproses scheduler)
+        if ($statusManual !== null) {
             $peminjaman->status = $statusManual;
-        } elseif ($tanggalKembali) {
-            // Sudah dikembalikan -> hitung denda pakai LoanService, status selesai
-            $denda = $loanService->hitungDenda($peminjaman);
-            $peminjaman->denda  = $denda;
+        } elseif ($tanggalKembali !== null) {
+            $peminjaman->denda = $loanService->hitungDenda($peminjaman);
             $peminjaman->status = 'selesai';
         } else {
-            // Masih dipinjam, belum lewat jatuh tempo
             $peminjaman->status = 'dipinjam';
         }
 
         $peminjaman->save();
 
-        // Kurangi stok buku sesuai peminjaman (kecuali sudah dikembalikan,
-        // supaya stok akhir hasil seed tetap masuk akal)
-        if (!$tanggalKembali) {
+        if ($tanggalKembali === null) {
             $buku->decrement('stok');
         }
 

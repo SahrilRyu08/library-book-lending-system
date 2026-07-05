@@ -22,8 +22,8 @@ class ReportController extends Controller
 
         if ($startDate && $endDate) {
             $query->whereBetween('tanggal_pinjam', [
-                $startDate,
-                $endDate,
+                $startDate . ' 00:00:00',
+                $endDate . ' 23:59:59',
             ]);
         }
 

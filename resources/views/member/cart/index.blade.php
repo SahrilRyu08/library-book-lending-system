@@ -47,12 +47,15 @@
                             <td>
                                 {{-- Hapus dari keranjang --}}
                                 <form method="POST"
-                                      action="{{ route('member.cart.destroy', $bukuId) }}">
+                                      action="{{ route('member.cart.destroy', $bukuId) }}"
+                                      id="deleteCartForm-{{ $bukuId }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-moco-outline"
+                                    <button type="button" class="btn btn-sm btn-moco-outline"
                                             style="color:var(--moco-text-faint);"
-                                            onclick="return confirm('Hapus buku ini dari keranjang?')">
+                                            onclick="showConfirmModal('Hapus dari Keranjang', 'Hapus buku ini dari keranjang?', function() {
+                                                document.getElementById('deleteCartForm-{{ $bukuId }}').submit();
+                                            })">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
