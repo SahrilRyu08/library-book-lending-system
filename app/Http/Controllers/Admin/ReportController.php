@@ -35,22 +35,27 @@ class ReportController extends Controller
         $totalTransaksi = (clone $query)->count();
         $totalDenda     = (clone $query)->sum('denda');
 
-        // Catatan: 'terlambat' di sini dihitung dari transaksi yang
-        // pernah telat (denda > 0), bukan status 'terlambat' saja,
-        // supaya konsisten dengan ReturnController yang selalu
-        // menutup transaksi dengan status 'selesai'.
+        // Hitung transaksi yang saat ini statusnya 'terlambat'
         $jumlahTerlambat = (clone $query)
-            ->where(function ($q) {
-                $q->where('status', 'terlambat')
-                    ->orWhere('denda', '>', 0);
-            })
+            ->where('status', 'terlambat')
             ->count();
 
-        $popularBooks = PeminjamanDetail::select(
+        $popularBooksQuery = PeminjamanDetail::select(
             'buku_id',
             DB::raw('SUM(jumlah) as total_dipinjam')
         )
-            ->with('buku')
+            ->with('buku');
+
+        if ($startDate && $endDate) {
+            $popularBooksQuery->whereHas('peminjaman', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('tanggal_pinjam', [
+                    $startDate . ' 00:00:00',
+                    $endDate . ' 23:59:59',
+                ]);
+            });
+        }
+
+        $popularBooks = $popularBooksQuery
             ->groupBy('buku_id')
             ->orderByDesc('total_dipinjam')
             ->take(10)

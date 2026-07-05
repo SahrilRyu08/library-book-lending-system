@@ -29,7 +29,6 @@
                 <th>Anggota</th>
                 <th>Buku</th>
                 <th>Tgl Pinjam</th>
-                <th>Tgl Kembali</th>
                 <th>Status</th>
                 <th>Denda</th>
                 <th></th>
@@ -41,7 +40,6 @@
                     <td>{{ $loan->user->nama ?? '-' }}</td>
                     <td>{{ $loan->detail->first()->buku->judul ?? '-' }}</td>
                     <td>{{ Carbon::parse($loan->tanggal_pinjam)->format('d M Y') }}</td>
-                    <td>{{ Carbon::parse($loan->tanggal_kembali)->format('d M Y') }}</td>
                     <td>
                         @switch($loan->status)
                             @case('dipinjam')
@@ -73,7 +71,7 @@
                             @csrf
                             <input type="hidden" name="loan_id" value="{{ $loan->id }}">
                             <button type="button" class="btn btn-sm btn-moco"
-                                    onclick="showConfirmModal('Konfirmasi Pengembalian', 'Konfirmasi pengembalian buku ini?', function() {
+                                    onclick="showConfirmModal('Konfirmasi Pengembalian', 'Konfirmasi pengembalian buku ini?', function () {
                                         document.getElementById('returnForm-{{ $loan->id }}').submit();
                                     })">
                                 Kembalikan
@@ -83,7 +81,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center moco-note py-4">
+                    <td colspan="6" class="text-center moco-note py-4">
                         Tidak ada data pengembalian.
                     </td>
                 </tr>

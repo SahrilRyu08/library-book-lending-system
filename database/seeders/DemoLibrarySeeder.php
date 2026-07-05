@@ -259,7 +259,7 @@ class   DemoLibrarySeeder extends Seeder
                 $jatuhTempo = now()->subDays(rand(1, 10));
                 $tanggalPinjam = (clone $jatuhTempo)->subDays(7);
                 $tanggalKembali = null;
-                $denda = now()->diffInDays($jatuhTempo) * 5000;
+                $denda = abs(now()->diffInDays($jatuhTempo)) * config('library.denda_per_hari', 1000);
 
                 $loan = Peminjaman::create([
                     'user_id' => $members[$i]->id,
@@ -282,47 +282,102 @@ class   DemoLibrarySeeder extends Seeder
                 }
             }
 
-            // Create exactly 2 sedang dipinjam loans
-            for ($i = 2; $i < 4; $i++) {
-                $status = 'dipinjam';
-                $tanggalPinjam = now()->subDays(rand(1, 3));
-                $jatuhTempo = (clone $tanggalPinjam)->addDays(7);
-                $tanggalKembali = null;
-                $denda = 0;
+            // Create exactly 1 sedang dipinjam loan (for testing return)
+            $status = 'dipinjam';
+            $tanggalPinjam = now()->subDays(1);
+            $jatuhTempo = (clone $tanggalPinjam)->addDays(7);
+            $tanggalKembali = null;
+            $denda = 0;
 
-                $loan = Peminjaman::create([
-                    'user_id' => $members[$i]->id,
-                    'tanggal_pinjam' => $tanggalPinjam,
-                    'jatuh_tempo' => $jatuhTempo,
-                    'tanggal_kembali' => $tanggalKembali,
-                    'status' => $status,
-                    'denda' => $denda,
-                ]);
+            $loan = Peminjaman::create([
+                'user_id' => $members[0]->id, // Sahril
+                'tanggal_pinjam' => $tanggalPinjam,
+                'jatuh_tempo' => $jatuhTempo,
+                'tanggal_kembali' => $tanggalKembali,
+                'status' => $status,
+                'denda' => $denda,
+            ]);
 
-                $selectedBook = $bookCollection[$i];
-                PeminjamanDetail::create([
-                    'peminjaman_id' => $loan->id,
-                    'buku_id' => $selectedBook->id,
-                    'jumlah' => 1,
-                ]);
-                if ($selectedBook->stok > 0) {
-                    $selectedBook->decrement('stok', 1);
-                    $selectedBook->refresh();
-                }
+            $selectedBook = $bookCollection[2]; // Clean Code
+            PeminjamanDetail::create([
+                'peminjaman_id' => $loan->id,
+                'buku_id' => $selectedBook->id,
+                'jumlah' => 1,
+            ]);
+            if ($selectedBook->stok > 0) {
+                $selectedBook->decrement('stok');
+                $selectedBook->refresh();
             }
 
-            // Create a selesai loan for one member for history
-            $selesaiLoan = Peminjaman::create([
+            // Create exactly 1 terlambat loan (for testing return with denda)
+            $status = 'terlambat';
+            $tanggalPinjam = now()->subDays(14);
+            $jatuhTempo = (clone $tanggalPinjam)->addDays(7); // 7 days ago
+            $tanggalKembali = null;
+            $denda = 0; // Not calculated yet, will be calculated on return
+
+            $loan = Peminjaman::create([
+                'user_id' => $members[1]->id, // Zhavira
+                'tanggal_pinjam' => $tanggalPinjam,
+                'jatuh_tempo' => $jatuhTempo,
+                'tanggal_kembali' => $tanggalKembali,
+                'status' => $status,
+                'denda' => $denda,
+            ]);
+
+            $selectedBook = $bookCollection[3]; // Effective Java
+            PeminjamanDetail::create([
+                'peminjaman_id' => $loan->id,
+                'buku_id' => $selectedBook->id,
+                'jumlah' => 1,
+            ]);
+            if ($selectedBook->stok > 0) {
+                $selectedBook->decrement('stok');
+                $selectedBook->refresh();
+            }
+
+            // Create 1 selesai tepat waktu
+            $selesaiTepatLoan = Peminjaman::create([
                 'user_id' => $members[0]->id,
                 'tanggal_pinjam' => now()->subDays(14),
                 'jatuh_tempo' => now()->subDays(7),
-                'tanggal_kembali' => now()->subDays(5),
+                'tanggal_kembali' => now()->subDays(8),
                 'status' => 'selesai',
                 'denda' => 0,
             ]);
             PeminjamanDetail::create([
-                'peminjaman_id' => $selesaiLoan->id,
+                'peminjaman_id' => $selesaiTepatLoan->id,
                 'buku_id' => $bookCollection[4]->id,
+                'jumlah' => 1,
+            ]);
+
+            // Create 1 selesai terlambat (with denda)
+            $selesaiTerlambatLoan = Peminjaman::create([
+                'user_id' => $members[1]->id,
+                'tanggal_pinjam' => now()->subDays(20),
+                'jatuh_tempo' => now()->subDays(13),
+                'tanggal_kembali' => now()->subDays(10),
+                'status' => 'selesai',
+                'denda' => 3 * 5000,
+            ]);
+            PeminjamanDetail::create([
+                'peminjaman_id' => $selesaiTerlambatLoan->id,
+                'buku_id' => $bookCollection[5]->id,
+                'jumlah' => 1,
+            ]);
+
+            // Create 1 more selesai tepat waktu for David
+            $selesaiDavidLoan = Peminjaman::create([
+                'user_id' => $members[2]->id,
+                'tanggal_pinjam' => now()->subDays(30),
+                'jatuh_tempo' => now()->subDays(23),
+                'tanggal_kembali' => now()->subDays(25),
+                'status' => 'selesai',
+                'denda' => 0,
+            ]);
+            PeminjamanDetail::create([
+                'peminjaman_id' => $selesaiDavidLoan->id,
+                'buku_id' => $bookCollection[6]->id,
                 'jumlah' => 1,
             ]);
 

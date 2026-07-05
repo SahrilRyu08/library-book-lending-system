@@ -72,7 +72,7 @@
                             <span class="moco-note">-</span>
                         @elseif($isLate)
                             <span class="text-danger fw-bold">
-                                {{ $daysLeft }} hari telat
+                                Telat {{ $daysLeft }} hari
                              </span>
                         @else
                             <span class="text-primary fw-semibold">
