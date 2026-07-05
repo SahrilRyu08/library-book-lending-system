@@ -60,7 +60,7 @@ class ReturnController extends Controller
             'loan_id' => 'required|exists:peminjaman,id',
         ]);
 
-        $loan = Peminjaman::with('details.buku', 'user')
+        $loan = Peminjaman::with('detail.buku', 'user')
             ->findOrFail($request->loan_id);
 
         if ($loan->tanggal_kembali !== null || $loan->status === 'selesai') {
@@ -83,7 +83,7 @@ class ReturnController extends Controller
             $loan->status = 'selesai';
             $loan->save();
 
-            foreach ($loan->details as $detail) {
+            foreach ($loan->detail as $detail) {
                 $detail->buku->increment('stok');
             }
         });

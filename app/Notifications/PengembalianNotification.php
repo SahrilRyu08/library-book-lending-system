@@ -23,7 +23,7 @@ class PengembalianNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $judulBuku = $this->peminjaman->details
+        $judulBuku = $this->peminjaman->detail
             ->pluck('buku.judul')
             ->filter()
             ->implode(', ');

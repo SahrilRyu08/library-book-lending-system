@@ -70,7 +70,6 @@ class NotificationPeminjamanSeeder extends Seeder
             tanggalPinjam: now()->subDays($lamaPeminjaman + 5),
             jatuhTempo: now()->subDays(5), // sudah lewat 5 hari
             tanggalKembali: null,
-            statusManual: 'dipinjam', // sengaja belum diubah scheduler
             loanService: $loanService
         );
 
@@ -98,7 +97,6 @@ class NotificationPeminjamanSeeder extends Seeder
             tanggalPinjam: now()->subDays($lamaPeminjaman + 10),
             jatuhTempo: now()->subDays(10),
             tanggalKembali: null,
-            statusManual: 'terlambat',
             loanService: $loanService
         );
 
