@@ -12,7 +12,7 @@ composer install
 
 cp .env.example .env
 
-QUEUE_CONNECTION=sync
+change in file .env QUEUE_CONNECTION=database => QUEUE_CONNECTION=sync
 
 php artisan key:generate
 
