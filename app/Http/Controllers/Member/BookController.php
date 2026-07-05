@@ -46,6 +46,7 @@ class BookController extends Controller
         $user = Auth::user();
 
         $book = Buku::with('kategori')->findOrFail($id);
+        $cart = session('cart', []);
 
         // Hitung berapa buku yang sedang dipinjam user ini
         $kuotaAktif = $user
@@ -57,7 +58,20 @@ class BookController extends Controller
             ->sum(fn ($loan) => $loan->detail->sum('jumlah'));
 
         $maxPinjam = config('library.max_buku_per_pinjam', 3);
+        $jumlahDiKeranjang = array_sum($cart);
+        $jumlahBukuIniDiKeranjang = (int) ($cart[$book->id] ?? 0);
+        $sisaKuota = max(0, $maxPinjam - $kuotaAktif - $jumlahDiKeranjang);
+        $stokBisaDitambah = max(0, $book->tersedia - $jumlahBukuIniDiKeranjang);
+        $maxTambah = min($sisaKuota, $stokBisaDitambah);
 
-        return view('member.books.show', compact('book', 'kuotaAktif', 'maxPinjam'));
+        return view('member.books.show', compact(
+            'book',
+            'kuotaAktif',
+            'maxPinjam',
+            'jumlahDiKeranjang',
+            'jumlahBukuIniDiKeranjang',
+            'sisaKuota',
+            'maxTambah'
+        ));
     }
 }

@@ -33,6 +33,7 @@ Route::prefix('member')->name('member.')->middleware(['auth', 'role:anggota'])->
     // Keranjang
     Route::get('/cart',              [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart',             [CartController::class, 'store'])->name('cart.store');
+    Route::patch('/cart/{bukuId}',   [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{bukuId}',  [CartController::class, 'destroy'])->name('cart.destroy');
     Route::get('/loans',             [MemberLoanController::class, 'index'])->name('loans.index');
     Route::post('/loans',            [MemberLoanController::class, 'store'])->name('loans.store');

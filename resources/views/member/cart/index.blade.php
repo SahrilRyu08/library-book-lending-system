@@ -10,7 +10,7 @@
     <i class="bi bi-info-circle"></i>
     <div>
         Kuota aktif: <strong>{{ $kuotaAktif }} dari {{ $maxPinjam }} buku</strong> sedang dipinjam
-        &middot; sisa keranjang: <strong>{{ $maxPinjam - $kuotaAktif - array_sum($cart) }}</strong> slot
+        &middot; sisa keranjang: <strong>{{ max($maxPinjam - $kuotaAktif - array_sum($cart), 0) }}</strong> slot
     </div>
 </div>
 
@@ -43,7 +43,24 @@
                                     <span class="badge-moco-out">Stok Habis</span>
                                 @endif
                             </td>
-                            <td>{{ $jumlah }}</td>
+                            <td>
+                                <form method="POST"
+                                      action="{{ route('member.cart.update', $bukuId) }}"
+                                      class="d-flex align-items-center gap-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="number"
+                                           name="jumlah"
+                                           value="{{ $jumlah }}"
+                                           min="1"
+                                           max="{{ max($buku->tersedia, 1) }}"
+                                           class="form-control moco-input"
+                                           style="width:88px;">
+                                    <button type="submit" class="btn btn-sm btn-moco-outline">
+                                        Update
+                                    </button>
+                                </form>
+                            </td>
                             <td>
                                 {{-- Hapus dari keranjang --}}
                                 <form method="POST"

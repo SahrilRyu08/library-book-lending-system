@@ -63,7 +63,7 @@ class LoanController extends Controller
             ->get()
             ->sum(fn ($loan) => $loan->detail->sum('jumlah'));
 
-        if (($kuotaAktif + count($cart)) > $maxPinjam) {
+        if (($kuotaAktif + array_sum($cart)) > $maxPinjam) {
             return redirect()->route('member.cart.index')
                 ->with('error', 'Kuota peminjaman tidak mencukupi.');
         }
@@ -86,16 +86,16 @@ class LoanController extends Controller
                 $buku = Buku::findOrFail($bukuId);
 
                 // Validasi stok sekali lagi sebelum simpan
-                if ($buku->tersedia < 1) {
+                if ($buku->tersedia < $jumlah) {
                     DB::rollBack();
                     return redirect()->route('member.cart.index')
-                        ->with('error', 'Stok "' . $buku->judul . '" habis saat pengajuan.');
+                        ->with('error', 'Stok "' . $buku->judul . '" tidak mencukupi saat pengajuan.');
                 }
 
                 PeminjamanDetail::create([
                     'peminjaman_id' => $peminjaman->id,
                     'buku_id'       => $bukuId,
-                    'jumlah'        => 1,
+                    'jumlah'        => $jumlah,
                 ]);
             }
 

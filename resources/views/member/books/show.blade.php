@@ -2,6 +2,10 @@
 @section('title', $book->judul)
 
 @section('content')
+@php
+    $quotaUsed = $kuotaAktif + $jumlahDiKeranjang;
+    $quotaPercent = ($quotaUsed / max($maxPinjam, 1)) * 100;
+@endphp
 <a href="{{ route('member.books.index') }}"
    class="d-inline-flex align-items-center gap-1 moco-note text-decoration-none mb-3"
    style="color:var(--moco-blue);">
@@ -45,14 +49,14 @@
         </p>
 
         {{-- Quota Info --}}
-        @if($book->stok > 0)
-            @if($kuotaAktif < $maxPinjam)
+        @if($book->tersedia > 0)
+            @if($maxTambah > 0)
                 <div class="moco-alert moco-alert-info mb-3">
                     <i class="bi bi-check-circle-fill"></i>
                     <div>
-                        <strong>Kuota peminjaman Anda: {{ $kuotaAktif }} dari {{ $maxPinjam }} buku terpakai</strong>
+                        <strong>Kuota peminjaman Anda: {{ $quotaUsed }} dari {{ $maxPinjam }} buku terpakai</strong>
                         <div class="moco-quota-bar mt-2">
-                            <div class="fill" style="width:{{ ($kuotaAktif / $maxPinjam) * 100 }}%;"></div>
+                            <div class="fill" style="width:{{ $quotaPercent }}%;"></div>
                         </div>
                     </div>
                 </div>
@@ -60,16 +64,30 @@
                 <div class="moco-card">
                     <form method="POST" action="{{ route('member.cart.store') }}">
                         @csrf
-                        {{-- Jumlah hardcode 1, tidak perlu input --}}
                         <input type="hidden" name="buku_id" value="{{ $book->id }}">
-                        <input type="hidden" name="jumlah" value="1">
-                        <div class="d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-end gap-3 flex-wrap">
                             <div class="col">
                                 <p class="moco-note mb-0">
                                     Sisa kuota: <strong style="color:var(--moco-blue);">
-                                        {{ $maxPinjam - $kuotaAktif }} buku
+                                        {{ $sisaKuota }} buku
                                     </strong>
                                 </p>
+                                @if($jumlahBukuIniDiKeranjang > 0)
+                                    <p class="moco-note mt-1 mb-0">
+                                        Sudah ada <strong>{{ $jumlahBukuIniDiKeranjang }}</strong> buku ini di keranjang
+                                    </p>
+                                @endif
+                            </div>
+                            <div style="width:140px;">
+                                <label for="jumlah" class="moco-label">Jumlah</label>
+                                <input type="number"
+                                       id="jumlah"
+                                       name="jumlah"
+                                       class="form-control moco-input"
+                                       value="1"
+                                       min="1"
+                                       max="{{ $maxTambah }}">
+                                <div class="moco-note mt-1">Maks tambah {{ $maxTambah }}</div>
                             </div>
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-moco">
@@ -87,12 +105,12 @@
                 <div class="moco-alert moco-alert-muted mb-3">
                     <i class="bi bi-exclamation-circle"></i>
                     <div>
-                        <strong>Maksimal peminjaman telah tercapai ({{ $kuotaAktif }} dari {{ $maxPinjam }} buku)</strong>
+                        <strong>Maksimal peminjaman telah tercapai ({{ $quotaUsed }} dari {{ $maxPinjam }} buku)</strong>
                         <div class="moco-quota-bar mt-2">
                             <div class="fill full" style="width:100%;"></div>
                         </div>
                         <div class="moco-note mt-1">
-                            Kembalikan salah satu buku yang sedang dipinjam untuk bisa meminjam buku baru.
+                            Kuota penuh atau jumlah buku ini di keranjang sudah mencapai batas stok/kuota.
                         </div>
                     </div>
                 </div>
