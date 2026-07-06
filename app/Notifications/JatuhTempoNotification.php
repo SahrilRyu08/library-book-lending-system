@@ -53,7 +53,7 @@ class JatuhTempoNotification extends Notification implements ShouldQueue
             'type'          => 'due',
             'title'         => 'Segera Jatuh Tempo',
             'message'       => 'Buku "' . ($judulBuku ?: '-') . "\" jatuh tempo dalam {$this->hMinus} hari.",
-            'action_url'    => route('member.loans.show', $this->peminjaman->id),
+            'action_url'    => route('member.loans.show', $this->peminjaman->id, absolute: false),
             'peminjaman_id' => $this->peminjaman->id,
         ];
     }

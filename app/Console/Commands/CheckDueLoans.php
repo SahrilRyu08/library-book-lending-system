@@ -36,6 +36,7 @@ class CheckDueLoans extends Command
         $tanggalTarget = Carbon::now()->addDays($hMinus)->toDateString();
 
         $akanJatuhTempo = Peminjaman::where('status', 'dipinjam')
+            ->whereNull('tanggal_kembali')
             ->whereDate('jatuh_tempo', $tanggalTarget)
             ->with(['user', 'detail.buku'])
             ->get();

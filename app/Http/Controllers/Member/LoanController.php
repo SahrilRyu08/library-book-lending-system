@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Buku;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanDetail;
+use App\Models\User;
+use App\Notifications\PengajuanPeminjamanBaruNotification;
 use App\Services\LoanService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -131,7 +133,16 @@ class LoanController extends Controller
 
             DB::commit();
 
-            // Kosongkan keranjang setelah berhasil
+// Muat ulang relasi yang dibutuhkan notifikasi
+            $peminjaman->load(['user', 'detail.buku']);
+
+// Kirim notifikasi ke semua admin
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new PengajuanPeminjamanBaruNotification($peminjaman));
+            }
+
+// Kosongkan keranjang setelah berhasil
             session()->forget('cart');
 
             return redirect()->route('member.loans.index')
