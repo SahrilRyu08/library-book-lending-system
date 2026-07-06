@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
+use App\Notifications\PeminjamanDitolakNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -85,6 +86,10 @@ class LoanController extends Controller
         $loan->update([
             'status' => 'ditolak',
         ]);
+
+        if ($loan->user) {
+            $loan->user->notify(new PeminjamanDitolakNotification($loan));
+        }
 
         return back()->with('success', 'Pengajuan peminjaman berhasil ditolak.');
     }

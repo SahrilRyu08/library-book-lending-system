@@ -47,16 +47,18 @@
         {{-- Quota Info --}}
         @if($book->tersedia > 0)
             @if($bisaPinjam)
+                @php
+                    $quotaPercent = $maxPinjam > 0
+                        ? min(100, ($kuotaAktif / $maxPinjam) * 100)
+                        : 0;
+                    $isQuotaFull = $kuotaAktif >= $maxPinjam;
+                @endphp
                 <div class="moco-alert moco-alert-info mb-3">
                     <i class="bi bi-check-circle-fill"></i>
                     <div>
                         <strong>Kuota peminjaman Anda: {{ $kuotaAktif }} dari {{ $maxPinjam }} buku terpakai</strong>
                         <div class="moco-quota-bar mt-2">
-                            @if($kuotaAktif > 0)
-                                <div class="fill full" style="width:100%;"></div>
-                            @else
-                                <div class="fill" style="width:0%;"></div>
-                            @endif
+                            <div class="fill {{ $isQuotaFull ? 'full' : '' }}" style="width:{{ $quotaPercent }}%;"></div>
                         </div>
                     </div>
                 </div>
