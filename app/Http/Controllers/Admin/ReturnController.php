@@ -44,15 +44,12 @@ class ReturnController extends Controller
             }
         }
 
-        if ($request->filled('member')) {
-            $query->whereHas('user', function ($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->member . '%');
-            });
-        }
+        if ($request->filled('search')) {
+            $search = $request->search;
 
-        if ($request->filled('book')) {
-            $query->whereHas('detail.buku', function ($q) use ($request) {
-                $q->where('judul', 'like', '%' . $request->book . '%');
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', fn ($u) => $u->where('nama', 'like', "%{$search}%"))
+                    ->orWhereHas('detail.buku', fn ($b) => $b->where('judul', 'like', "%{$search}%"));
             });
         }
 

@@ -58,7 +58,7 @@ class KeterlambatanNotification extends Notification implements ShouldQueue
             'type'          => 'late',
             'title'         => 'Peminjaman Terlambat',
             'message'       => 'Buku "' . ($judulBuku ?: '-') . '" sudah melewati batas pengembalian.',
-            'action_url'    => route('member.loans.show', $this->peminjaman->id),
+            'action_url'    => route('member.loans.show', $this->peminjaman->id, absolute: false),
             'peminjaman_id' => $this->peminjaman->id,
         ];
     }
