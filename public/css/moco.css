@@ -1,0 +1,515 @@
+/* ============================================================
+   MOCO — Custom Theme CSS
+   Dipakai di atas Bootstrap 5 (bootstrap.min.css harus di-load duluan)
+   ============================================================ */
+
+/* --- Design Tokens --- */
+:root {
+    --moco-paper:       #F7F9FC;
+    --moco-card:        #FFFFFF;
+    --moco-blue:        #2F6FE0;
+    --moco-blue-dark:   #2557B8;
+    --moco-blue-soft:   #EAF1FD;
+    --moco-blue-softer: #F3F7FE;
+    --moco-slate:       #0F172A;
+    --moco-text:        #1E293B;
+    --moco-text-soft:   #64748B;
+    --moco-text-faint:  #94A3B8;
+    --moco-line:        #E6EAF1;
+    --moco-warn:        #B7791F;
+    --moco-warn-bg:     #FBF1DE;
+    --moco-muted-bg:    #F1F4F9;
+}
+
+/* --- Base --- */
+body {
+    background: var(--moco-paper);
+    color: var(--moco-text);
+    font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.01em;
+    color: var(--moco-slate);
+}
+
+/* --- Logo Mark --- */
+.moco-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--moco-blue);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* --- Navbar (Member) --- */
+.moco-navbar {
+    background: #fff;
+    border-bottom: 1px solid var(--moco-line);
+    padding: 14px 28px;
+}
+.moco-navbar .navbar-brand {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--moco-slate);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+.moco-navbar .nav-link {
+    color: var(--moco-text-soft);
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 4px 0;
+    border-bottom: 2px solid transparent;
+    margin: 0 13px;
+}
+.moco-navbar .nav-link:hover,
+.moco-navbar .nav-link.active {
+    color: var(--moco-blue);
+    border-bottom-color: var(--moco-blue);
+    font-weight: 600;
+}
+.moco-navbar .nav-user {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--moco-text);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+/* --- Notif Bell --- */
+.moco-bell {
+    position: relative;
+    color: var(--moco-text-soft);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+.moco-bell-dot {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--moco-blue);
+    border: 2px solid #fff;
+}
+
+/* Notification Dropdown */
+.moco-notif-panel {
+    position: absolute;
+    top: 44px;
+    right: 0;
+    width: 330px;
+    background: #fff;
+    border: 1px solid var(--moco-line);
+    border-radius: 14px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+    overflow: hidden;
+    z-index: 1050;
+    display: none;
+}
+.moco-notif-panel.show { display: block; }
+.moco-notif-panel .notif-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--moco-line);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--moco-slate);
+}
+.moco-notif-item {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--moco-line);
+    display: flex;
+    gap: 11px;
+}
+.moco-notif-item:last-child { border-bottom: none; }
+.moco-notif-item.unread { background: #FAFBFF; }
+.moco-notif-item .notif-ic {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--moco-blue-soft);
+    color: var(--moco-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+}
+.moco-notif-item .notif-ic.read {
+    background: var(--moco-muted-bg);
+    color: var(--moco-text-faint);
+}
+.moco-notif-item .notif-txt {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--moco-text);
+}
+.moco-notif-item .notif-time {
+    font-size: 10.5px;
+    color: var(--moco-text-faint);
+    margin-top: 3px;
+}
+
+/* --- Admin Sidebar --- */
+.moco-sidebar {
+    background: #FBFCFE;
+    border-right: 1px solid var(--moco-line);
+    min-height: calc(100vh - 57px);
+    padding: 16px 0;
+    width: 210px;
+    flex-shrink: 0;
+}
+.moco-sidebar .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--moco-text-soft);
+    text-decoration: none;
+    border-left: 2.5px solid transparent;
+    transition: .12s;
+}
+.moco-sidebar .sidebar-item:hover {
+    color: var(--moco-text);
+    background: var(--moco-blue-softer);
+}
+.moco-sidebar .sidebar-item.active {
+    background: var(--moco-blue-softer);
+    border-left-color: var(--moco-blue);
+    color: var(--moco-blue);
+    font-weight: 600;
+}
+.moco-admin-wrap {
+    display: flex;
+    min-height: calc(100vh - 57px);
+}
+.moco-main {
+    flex: 1;
+    padding: 28px 32px;
+    overflow-x: auto;
+}
+
+/* --- Page Header --- */
+.moco-page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--moco-slate);
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+}
+.moco-page-sub {
+    font-size: 13.5px;
+    color: var(--moco-text-soft);
+    margin-bottom: 22px;
+}
+.moco-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--moco-text-faint);
+    margin-bottom: 8px;
+}
+
+/* --- Buttons --- */
+.btn-moco {
+    background: var(--moco-blue);
+    border-color: var(--moco-blue);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(47, 111, 224, 0.15);
+}
+.btn-moco:hover {
+    background: var(--moco-blue-dark);
+    border-color: var(--moco-blue-dark);
+    color: #fff;
+}
+.btn-moco-outline {
+    border: 1px solid var(--moco-line);
+    background: #fff;
+    color: var(--moco-text);
+    font-weight: 500;
+    border-radius: 10px;
+}
+.btn-moco-outline:hover {
+    border-color: var(--moco-blue);
+    color: var(--moco-blue);
+}
+.btn-moco-disabled {
+    background: var(--moco-muted-bg);
+    border-color: var(--moco-muted-bg);
+    color: var(--moco-text-faint);
+    cursor: not-allowed;
+    border-radius: 10px;
+}
+
+/* --- Forms --- */
+.moco-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--moco-text);
+    margin-bottom: 5px;
+    display: block;
+}
+.moco-input {
+    border-color: var(--moco-line) !important;
+    border-radius: 10px !important;
+    font-size: 13.5px;
+}
+.moco-input:focus {
+    border-color: var(--moco-blue) !important;
+    box-shadow: 0 0 0 3px rgba(47, 111, 224, .12) !important;
+}
+
+/* --- Cards --- */
+.moco-card {
+    background: #fff;
+    border: 1px solid var(--moco-line);
+    border-radius: 14px;
+    padding: 20px;
+}
+.moco-stat-card {
+    background: #fff;
+    border: 1px solid var(--moco-line);
+    border-radius: 14px;
+    padding: 20px;
+}
+.moco-stat-card .stat-num {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--moco-slate);
+    letter-spacing: -0.02em;
+}
+.moco-stat-card .stat-lbl {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--moco-text-soft);
+    margin-top: 4px;
+}
+
+/* --- Book Cards --- */
+.moco-book-card {
+    background: #fff;
+    border: 1px solid var(--moco-line);
+    border-radius: 12px;
+    padding: 14px;
+    height: 100%;
+    transition: box-shadow .15s;
+}
+.moco-book-card:hover {
+    box-shadow: 0 4px 16px rgba(15,23,42,.08);
+}
+.moco-book-card.is-out { opacity: .55; }
+.moco-book-cover {
+    width: 100%;
+    aspect-ratio: 3/4;
+    border-radius: 8px;
+    background: var(--moco-muted-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--moco-text-faint);
+    overflow: hidden;
+}
+.moco-book-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+.moco-book-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin: 10px 0 2px 0;
+    color: var(--moco-slate);
+}
+.moco-book-author {
+    font-size: 12.5px;
+    color: var(--moco-text-soft);
+    margin-bottom: 10px;
+}
+
+/* --- Upload Box --- */
+.moco-upload-box {
+    border: 1.5px dashed var(--moco-line);
+    border-radius: 12px;
+    background: var(--moco-blue-softer);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--moco-text-soft);
+    cursor: pointer;
+    transition: border-color .15s;
+    min-height: 240px;
+}
+.moco-upload-box:hover { border-color: var(--moco-blue); }
+
+/* --- Table --- */
+.moco-table thead th {
+    background: var(--moco-muted-bg);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--moco-text-soft);
+    font-weight: 600;
+    border: none;
+    padding: 10px 12px;
+}
+.moco-table td {
+    font-size: 13.5px;
+    color: var(--moco-text);
+    border-color: var(--moco-line);
+    padding: 10px 12px;
+    vertical-align: middle;
+}
+
+/* --- Badges --- */
+.badge-moco-stock {
+    background: var(--moco-blue-soft);
+    color: var(--moco-blue-dark);
+    font-weight: 600;
+    border-radius: 6px;
+    font-size: 12px;
+    padding: .3em .65em;
+}
+.badge-moco-out {
+    background: var(--moco-muted-bg);
+    color: var(--moco-text-soft);
+    font-weight: 600;
+    border-radius: 6px;
+    font-size: 12px;
+    padding: .3em .65em;
+}
+.badge-moco-late {
+    background: var(--moco-warn-bg);
+    color: var(--moco-warn);
+    font-weight: 600;
+    border-radius: 6px;
+    font-size: 12px;
+    padding: .3em .65em;
+}
+.badge-moco-done {
+    background: var(--moco-muted-bg);
+    color: var(--moco-text-soft);
+    font-weight: 600;
+    border-radius: 6px;
+    font-size: 12px;
+    padding: .3em .65em;
+}
+.badge-moco-active {
+    background: var(--moco-blue-soft);
+    color: var(--moco-blue);
+    font-weight: 600;
+    border-radius: 6px;
+    font-size: 12px;
+    padding: .3em .65em;
+}
+
+/* --- Alert Boxes --- */
+.moco-alert {
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-size: 13px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.moco-alert-info {
+    background: var(--moco-blue-softer);
+    color: var(--moco-blue-dark);
+    border: 1px solid var(--moco-blue-soft);
+}
+.moco-alert-warn {
+    background: var(--moco-warn-bg);
+    color: #8A5E16;
+    border: 1px solid #F0DDAE;
+}
+.moco-alert-muted {
+    background: var(--moco-muted-bg);
+    color: var(--moco-text-soft);
+    border: 1px solid var(--moco-line);
+}
+
+/* --- Quota Bar --- */
+.moco-quota-bar {
+    height: 6px;
+    border-radius: 6px;
+    background: var(--moco-muted-bg);
+    overflow: hidden;
+    margin-top: 8px;
+    max-width: 260px;
+}
+.moco-quota-bar .fill {
+    height: 100%;
+    background: var(--moco-blue);
+    border-radius: 6px;
+    transition: width .3s;
+}
+.moco-quota-bar .fill.full { background: var(--moco-warn); }
+
+/* --- Category Icon --- */
+.moco-cat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--moco-blue-soft);
+    color: var(--moco-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* --- Auth Pages --- */
+.moco-auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--moco-paper);
+}
+.moco-auth-card {
+    background: #fff;
+    border: 1px solid var(--moco-line);
+    border-radius: 18px;
+    padding: 44px 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 4px 24px rgba(15,23,42,.06);
+}
+
+/* --- Note text --- */
+.moco-note {
+    font-size: 11.5px;
+    color: var(--moco-text-faint);
+}
+
+/* --- Admin Badge --- */
+.moco-admin-badge {
+    font-size: 10px;
+    font-weight: 600;
+    background: var(--moco-blue-soft);
+    color: var(--moco-blue);
+    padding: 2px 7px;
+    border-radius: 5px;
+    letter-spacing: .3px;
+}
